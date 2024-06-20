@@ -15,3 +15,15 @@ CREATE TABLE IF NOT EXISTS backtests (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (scene_id) REFERENCES scenes(id)
 );
+
+CREATE TABLE  IF NOT EXISTS users (
+  "id" SERIAL PRIMARY KEY NOT NULL,
+  "name" varchar NOT NULL,
+  "email" varchar NOT NULL,
+  "password" varchar NOT NULL,
+  "created_at" timestamp NOT NULL
+  "updated_at" timestamp NOT NULL
+  "deleted_at" timestamp NOT NULL
+
+  UNIQUE (email)
+);

@@ -5,3 +5,7 @@ scikit-learn
 backtrader
 freqtrade
 yfinance
+fastapi 
+uvicorn 
+psycopg2
+sqlalchemy

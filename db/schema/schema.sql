@@ -1,19 +1,21 @@
-CREATE TABLE IF NOT EXISTS scenes (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    period INT NOT NULL,
-    start_date DATE NOT NULL,
-    end_date DATE NOT NULL,
+CREATE TABLE backtest_results (
+    id SERIAL PRIMARY KEY,
+    scene_id INT REFERENCES scenes(id),
+    gross_profit FLOAT NOT NULL,
+    net_profit FLOAT NOT NULL,
+    number_of_trades INT NOT NULL,
+    winning_trades INT,
+    losing_trades INT,
+    max_drawdown FLOAT,
+    sharpe_ratio FLOAT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE IF NOT EXISTS backtests (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    scene_id INT,
-    gross_profit FLOAT,
-    net_profit FLOAT,
-    number_of_trades INT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (scene_id) REFERENCES scenes(id)
+CREATE TABLE scenes (
+    id SERIAL PRIMARY KEY,
+    period INT NOT NULL,
+    start_date DATE NOT NULL,
+    end_date DATE NOT NULL
 );
 
 CREATE TABLE  IF NOT EXISTS users (

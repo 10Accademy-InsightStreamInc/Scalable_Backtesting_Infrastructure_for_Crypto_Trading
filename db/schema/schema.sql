@@ -1,4 +1,4 @@
-CREATE TABLE scenes (
+CREATE TABLE IF NOT EXISTS scenes (
     id INT AUTO_INCREMENT PRIMARY KEY,
     period INT NOT NULL,
     start_date DATE NOT NULL,
@@ -6,7 +6,7 @@ CREATE TABLE scenes (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE backtests (
+CREATE TABLE IF NOT EXISTS backtests (
     id INT AUTO_INCREMENT PRIMARY KEY,
     scene_id INT,
     gross_profit FLOAT,

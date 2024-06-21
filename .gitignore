@@ -125,7 +125,7 @@ celerybeat.pid
 .env
 .venv
 env/
-mbacktesting/**
+backtesting/**
 venv/
 backtesting/**
 backtest/**

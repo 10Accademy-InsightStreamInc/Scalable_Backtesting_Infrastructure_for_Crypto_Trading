@@ -1,0 +1,16 @@
+{
+    "key": "MC.PA_2023-05-05_2024-05-05_MC.PA_MACD",
+    "_SYMBOL": "MC.PA",
+    "initial_cash": 12000.0,
+    "start_date": "2023-05-05",
+    "end_date": "2024-05-05",
+    "indicator": "MACD",
+    "metrics": {
+        "return": 0.005124994913736979,
+        "number_of_trades": 14,
+        "winning_trades": 4,
+        "losing_trades": 10,
+        "max_drawdown": 1.3054504701848728,
+        "sharpe_ratio": -0.7278526552857935
+    }
+}

@@ -85,8 +85,23 @@ def get_user_input():
     stock_choice = input("Enter the number corresponding to your choice: ")
     ticker = stocks.get(stock_choice, 'NVDA')  # Default to Nvidia if invalid choice
 
-    return initial_cash, start_date, end_date, ticker
+    # User chooses an indicator
+    indicators = {
+        '1': 'SMA',  # Simple Moving Average
+        '2': 'LSTM',  # LSTM time-series forecasting model
+        '3': 'MACD',  # Moving Average Convergence Divergence
+        '4': 'RSI',  # Relative Strength Index
+        '5': 'Bollinger Bands'  # Bollinger Bands
+    }
+    
+    print("Choose an indicator:")
+    for key, value in indicators.items():
+        print(f"{key}: {value}")
+    
+    indicator_choice = input("Enter the number corresponding to your choice: ")
+    indicator = indicators.get(indicator_choice, 'SMA')  # Default to SMA if invalid choice
 
+    return initial_cash, start_date, end_date, ticker, indicator
 def generate_unique_key(ticker, start_date, end_date):
     return f"{ticker}_{start_date}_{end_date}"
 
@@ -110,9 +125,10 @@ def run_backtest(config):
     start_date = config['start_date']
     end_date = config['end_date']
     ticker = config['ticker']
+    indicator = config['indicator']
 
     # Generate unique key
-    key = generate_unique_key(ticker, start_date, end_date)
+    key = f"{ticker}_{start_date}_{end_date}_{ticker}_{indicator}"
 
     # Check if results already exist
     csv_file = 'backtest_results.csv'
@@ -124,8 +140,7 @@ def run_backtest(config):
 
     # Download stock data from Yahoo Finance
     df = yf.download(ticker, start=start_date, end=end_date)
-
-    # Create a Cerebro instance
+                     # Create a Cerebro instance
     cerebro = bt.Cerebro()
 
     # Add the strategy
@@ -155,10 +170,11 @@ def run_backtest(config):
     # Prepare results
     backtest_results = {
         "key": key,
-        "ticker": ticker,
+        "_SYMBOL": ticker,
         "initial_cash": initial_cash,
         "start_date": start_date,
         "end_date": end_date,
+        "indicator": indicator,
         "metrics": {
             "return": metrics['return'],
             "number_of_trades": metrics['trades'],
@@ -169,7 +185,7 @@ def run_backtest(config):
         }
     }
     # Save the results to a JSON file
-    with open(f'results/backtest_results_{ticker}_{start_date}_to_{end_date}.json', 'w') as f:
+    with open(f'results/backtest_results_{ticker}_{start_date}_to_{end_date}_{indicator}.json', 'w') as f:
         json.dump(backtest_results, f, indent=4)
 
     # Print results
@@ -179,10 +195,11 @@ if __name__ == '__main__':
     with open('config.json', 'r') as f:
         config = json.load(f)
 
-    initial_cash, start_date, end_date, ticker = get_user_input()
+    initial_cash, start_date, end_date, ticker, indicator = get_user_input()
     config['initial_cash'] = initial_cash
     config['start_date'] = start_date
     config['end_date'] = end_date
     config['ticker'] = ticker
+    config['indicator'] = indicator
 
     run_backtest(config)

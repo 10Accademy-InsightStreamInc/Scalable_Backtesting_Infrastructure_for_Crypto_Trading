@@ -68,6 +68,11 @@ pip install -r requirements.txt
 ```
 ## Contributors
 - Abubeker Shamil
+- Addisu Alemu
+- Michael George
+- Sheila Murugi
+
+
 
 ## License
 This project is licensed under the MIT License - see the LICENSE file for details.

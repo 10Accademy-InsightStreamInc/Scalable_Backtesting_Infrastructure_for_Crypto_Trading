@@ -125,8 +125,10 @@ celerybeat.pid
 .env
 .venv
 env/
+backtesting/**
 venv/
-backtest/
+backtesting/**
+backtest/**
 ENV/
 env.bak/
 venv.bak/

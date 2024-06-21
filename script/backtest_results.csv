@@ -1,0 +1,2 @@
+key,ticker,initial_cash,start_date,end_date,metrics
+NVDA_2024-01-15_2024-06-10,NVDA,2500.0,2024-01-15,2024-06-10,"{'return': -0.03151280212402344, 'number_of_trades': 5, 'winning_trades': 2, 'losing_trades': 3, 'max_drawdown': 0.47658238860666036, 'sharpe_ratio': 'N/A'}"

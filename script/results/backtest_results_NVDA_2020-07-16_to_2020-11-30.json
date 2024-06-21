@@ -1,0 +1,14 @@
+{
+    "initial_cash": 10000,
+    "start_date": "2020-07-16",
+    "end_date": "2020-11-30",
+    "ticker": "NVDA",
+    "metrics": {
+        "return": -0.00013134994506835938,
+        "number_of_trades": 5,
+        "winning_trades": 2,
+        "losing_trades": 3,
+        "max_drawdown": 0.04392433887744277,
+        "sharpe_ratio": "N/A"
+    }
+}

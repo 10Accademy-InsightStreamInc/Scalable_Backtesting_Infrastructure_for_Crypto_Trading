@@ -1,0 +1,14 @@
+{
+    "initial_cash": 20000000,
+    "start_date": "2023-05-16",
+    "end_date": "2024-05-30",
+    "ticker": "NVDA",
+    "metrics": {
+        "return": -2.774100685119629e-06,
+        "number_of_trades": 14,
+        "winning_trades": 6,
+        "losing_trades": 8,
+        "max_drawdown": 6.003988736776245e-05,
+        "sharpe_ratio": -8177.912558984574
+    }
+}

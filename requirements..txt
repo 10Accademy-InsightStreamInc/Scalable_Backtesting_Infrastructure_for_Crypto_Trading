@@ -1,0 +1,6 @@
+backtrader
+seaborn
+matplotlib
+datetime
+plotly
+yfinance

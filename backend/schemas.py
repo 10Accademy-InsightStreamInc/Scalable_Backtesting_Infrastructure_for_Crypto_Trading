@@ -4,12 +4,27 @@ from datetime import date, datetime
 
 class IndicatorBase(BaseModel):
     name: str
+    symbol: str
     description: Optional[str] = None
 
 class IndicatorCreate(IndicatorBase):
     pass
 
 class Indicator(IndicatorBase):
+    id: int
+
+    class Config:
+        orm_mode = True
+
+class StockBase(BaseModel):
+    name: Optional[str] = None
+    symbol: str
+    description: Optional[str] = None
+
+class StockCreate(StockBase):
+    pass
+
+class Stock(StockBase):
     id: int
 
     class Config:

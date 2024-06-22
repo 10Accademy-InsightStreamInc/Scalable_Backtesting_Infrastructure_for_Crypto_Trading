@@ -42,6 +42,19 @@ def read_indicators(skip: int = 0, limit: int = 10, db: Session = Depends(get_db
     indicators = db.query(models.Indicator).offset(skip).limit(limit).all()
     return indicators
 
+@app.post('/stocks/', response_model=schemas.Stock)
+def create_stock(stock: schemas.StockCreate, db: Session = Depends(get_db)):
+    db_stock = models.Stock(**stock.model_dump())
+    db.add(db_stock)
+    db.commit()
+    db.refresh(db_stock)
+    return db_stock
+
+@app.get('/stocks/', response_model=List[schemas.Stock])
+def read_stocks(skip: int = 0, limit: int = 20, db: Session = Depends(get_db)):
+    stocks = db.query(models.Stock).offset(skip).limit(limit).all()
+    return stocks
+
 @app.post('/scenes/', response_model=schemas.Scene)
 def create_scene(scene: schemas.SceneCreate, db: Session = Depends(get_db)):
     db_scene = models.Scene(**scene.model_dump())

@@ -185,21 +185,21 @@ def run_backtest(config):
         }
     }
     # Save the results to a JSON file
-    with open(f'results/backtest_results_{ticker}_{start_date}_to_{end_date}_{indicator}.json', 'w') as f:
+    with open(f'scripts/results/backtest_results_{ticker}_{start_date}_to_{end_date}_{indicator}.json', 'w') as f:
         json.dump(backtest_results, f, indent=4)
 
     # Print results
     print(json.dumps(backtest_results, indent=4))
 
 if __name__ == '__main__':
-    with open('config.json', 'r') as f:
+    with open('scripts/config.json', 'r') as f:
         config = json.load(f)
 
-    initial_cash, start_date, end_date, ticker, indicator = get_user_input()
-    config['initial_cash'] = initial_cash
-    config['start_date'] = start_date
-    config['end_date'] = end_date
-    config['ticker'] = ticker
-    config['indicator'] = indicator
+    # initial_cash, start_date, end_date, ticker, indicator = get_user_input()
+    # config['initial_cash'] = initial_cash
+    # config['start_date'] = start_date
+    # config['end_date'] = end_date
+    # config['ticker'] = ticker
+    # config['indicator'] = indicator
 
     run_backtest(config)

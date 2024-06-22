@@ -10,3 +10,5 @@ uvicorn
 psycopg2
 sqlalchemy
 mlflow
+passlib
+jose

@@ -12,3 +12,4 @@ sqlalchemy
 mlflow
 passlib
 python-jose
+kafka-python

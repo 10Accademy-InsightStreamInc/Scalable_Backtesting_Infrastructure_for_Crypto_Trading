@@ -11,4 +11,4 @@ psycopg2
 sqlalchemy
 mlflow
 passlib
-jose
+python-jose

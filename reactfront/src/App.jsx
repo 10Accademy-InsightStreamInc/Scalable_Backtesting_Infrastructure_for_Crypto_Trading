@@ -8,6 +8,7 @@ import {
 import Login from "./pages/Login";
 import Backtest from "./pages/Backtest";
 import Signup from "./pages/Signup";
+import Result from "./pages/Result";
 
 function App() {
   const action = useNavigationType();
@@ -58,6 +59,7 @@ function App() {
       <Route path="/" element={<Login />} />
       <Route path="/backtest" element={<Backtest />} />
       <Route path="/signup" element={<Signup />} />
+      <Route path="/result" element={<Result />} />
     </Routes>
   );
 }

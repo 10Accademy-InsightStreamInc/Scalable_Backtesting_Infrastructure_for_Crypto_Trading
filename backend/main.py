@@ -3,16 +3,9 @@ from fastapi import FastAPI, Depends, HTTPException
 from sqlalchemy.orm import Session
 from . import models, schemas, database
 import pandas as pd
-import json
-import os, sys
-
-cwd=os.getcwd()
-sys.path.append(f"{cwd}/backend/utils/")
-sys.path.append(f"{cwd}/scripts/")
-
-print("The os is :: ", os.getcwd())
 
 from backend.utils.backtest import run_backtest
+from backend.utils.init_data import initialize_data
 
 models.Base.metadata.create_all(bind=database.engine)
 
@@ -24,6 +17,11 @@ def get_db():
         yield db
     finally:
         db.close()
+
+@app.on_event("startup") # TODO update the code with lifespan dependency
+def on_startup():
+    db = next(get_db())
+    initialize_data(db)
 
 @app.get('/health')
 def check_health():

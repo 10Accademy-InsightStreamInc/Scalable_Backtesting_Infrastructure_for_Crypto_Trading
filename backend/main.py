@@ -1,27 +1,26 @@
 from typing import List
 from fastapi import FastAPI, Depends, HTTPException
 from sqlalchemy.orm import Session
-from . import models, schemas, database
 import pandas as pd
+
+from . import models, schemas, database
+from .auth import router as auth_router
 
 from backend.utils.backtest import run_backtest
 from backend.utils.init_data import initialize_data
+
+get_db = database.get_db
 
 models.Base.metadata.create_all(bind=database.engine)
 
 app = FastAPI()
 
-def get_db():
-    db = database.SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
 @app.on_event("startup") # TODO update the code with lifespan dependency
 def on_startup():
     db = next(get_db())
     initialize_data(db)
+
+app.include_router(auth_router, prefix="/auth", tags=["auth"])
 
 @app.get('/health')
 def check_health():

@@ -31,9 +31,10 @@ class Scene(Base):
     period = Column(Integer, nullable=False)
     start_date = Column(Date, nullable=False)
     end_date = Column(Date, nullable=False)
-    stock_name = Column(String, ForeignKey('stocks.name'))
+    stock_id = Column(Integer, ForeignKey('stocks.id'))
     indicator_id = Column(Integer, ForeignKey('indicators.id'))
     backtests = relationship('BacktestResult', back_populates='scene')
+    stock = relationship('Stock')
     indicator = relationship('Indicator')
 
 class BacktestResult(Base):

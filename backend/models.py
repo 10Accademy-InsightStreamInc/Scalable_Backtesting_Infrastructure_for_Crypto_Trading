@@ -1,6 +1,20 @@
-from sqlalchemy import Column, Integer, Float, Date, ForeignKey, TIMESTAMP
+from sqlalchemy import Column, Integer, Float, Date, ForeignKey, TIMESTAMP, String, Text, text
 from sqlalchemy.orm import relationship
 from .database import Base
+
+class Indicator(Base):
+    __tablename__ = 'indicators'
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, nullable=False, unique=True)
+    symbol = Column(String, nullable=False, unique=True)
+    description = Column(Text)
+
+class Stock(Base):
+    __tablename__ = 'stocks'
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, nullable=False, unique=True)
+    symbol = Column(String, nullable=False, unique=True)
+    description = Column(Text)
 
 class Scene(Base):
     __tablename__ = 'scenes'
@@ -8,7 +22,10 @@ class Scene(Base):
     period = Column(Integer, nullable=False)
     start_date = Column(Date, nullable=False)
     end_date = Column(Date, nullable=False)
+    stock_name = Column(String, ForeignKey('stocks.name'))
+    indicator_id = Column(Integer, ForeignKey('indicators.id'))
     backtests = relationship('BacktestResult', back_populates='scene')
+    indicator = relationship('Indicator')
 
 class BacktestResult(Base):
     __tablename__ = 'backtest_results'
@@ -21,5 +38,5 @@ class BacktestResult(Base):
     losing_trades = Column(Integer)
     max_drawdown = Column(Float)
     sharpe_ratio = Column(Float)
-    created_at = Column(TIMESTAMP, server_default='CURRENT_TIMESTAMP')
+    created_at = Column(TIMESTAMP, server_default=text('CURRENT_TIMESTAMP'))
     scene = relationship('Scene', back_populates='backtests')

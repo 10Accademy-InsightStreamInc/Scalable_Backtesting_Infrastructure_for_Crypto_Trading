@@ -4,8 +4,15 @@ from sqlalchemy.orm import Session
 from . import models, schemas, database
 import pandas as pd
 import json
+import os, sys
 
-from utils.backtest import run_backtest
+cwd=os.getcwd()
+sys.path.append(f"{cwd}/backend/utils/")
+sys.path.append(f"{cwd}/scripts/")
+
+print("The os is :: ", os.getcwd())
+
+from backend.utils.backtest import run_backtest
 
 models.Base.metadata.create_all(bind=database.engine)
 
@@ -20,11 +27,11 @@ def get_db():
 
 @app.get('/health')
 def check_health():
-    return "healthy"
+    return "API is healthy"
 
 @app.post('/indicators/', response_model=schemas.Indicator)
 def create_indicator(indicator: schemas.IndicatorCreate, db: Session = Depends(get_db)):
-    db_indicator = models.Indicator(**indicator.dict())
+    db_indicator = models.Indicator(**indicator.model_dump())
     db.add(db_indicator)
     db.commit()
     db.refresh(db_indicator)
@@ -35,9 +42,22 @@ def read_indicators(skip: int = 0, limit: int = 10, db: Session = Depends(get_db
     indicators = db.query(models.Indicator).offset(skip).limit(limit).all()
     return indicators
 
+@app.post('/stocks/', response_model=schemas.Stock)
+def create_stock(stock: schemas.StockCreate, db: Session = Depends(get_db)):
+    db_stock = models.Stock(**stock.model_dump())
+    db.add(db_stock)
+    db.commit()
+    db.refresh(db_stock)
+    return db_stock
+
+@app.get('/stocks/', response_model=List[schemas.Stock])
+def read_stocks(skip: int = 0, limit: int = 20, db: Session = Depends(get_db)):
+    stocks = db.query(models.Stock).offset(skip).limit(limit).all()
+    return stocks
+
 @app.post('/scenes/', response_model=schemas.Scene)
 def create_scene(scene: schemas.SceneCreate, db: Session = Depends(get_db)):
-    db_scene = models.Scene(**scene.dict())
+    db_scene = models.Scene(**scene.model_dump())
     db.add(db_scene)
     db.commit()
     db.refresh(db_scene)
@@ -73,6 +93,11 @@ def perform_backtest(scene_id: int, db: Session = Depends(get_db)):
         backtest_results.append(db_backtest_result)
 
     return backtest_results
+
+@app.get('/run_backtest/', response_model=List[schemas.BacktestResult])
+def run_backtests(scene: schemas.SceneCreate, db: Session = Depends(get_db)):
+    db_scene = models.Scene(**scene.model_dump())
+    return db_scene
 
 @app.get('/backtest_results/', response_model=List[schemas.BacktestResult])
 def read_backtest_results(skip: int = 0, limit: int = 10, db: Session = Depends(get_db)):

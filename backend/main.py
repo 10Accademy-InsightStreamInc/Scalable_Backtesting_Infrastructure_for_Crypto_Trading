@@ -2,18 +2,36 @@ from typing import List
 from fastapi import FastAPI, Depends, HTTPException
 from sqlalchemy.orm import Session
 import pandas as pd
+import threading
 
 from . import models, schemas, database
 from .auth import router as auth_router
+from kafka_topic.kafka_config import get_kafka_producer, SCENE_TOPIC, RESULT_TOPIC, get_kafka_consumer
 
 from backend.utils.backtest import run_backtest
 from backend.utils.init_data import initialize_data
 
 get_db = database.get_db
+consumer = get_kafka_consumer(SCENE_TOPIC)
 
 models.Base.metadata.create_all(bind=database.engine)
 
 app = FastAPI()
+
+def consume_scene_parameters():
+    for message in consumer:
+        scene_parameters = message.value
+        print(f"Received scene parameters: {scene_parameters}")
+        # Run the backtest and produce the results
+        df = fetch_data(scene_parameters['start_date'], scene_parameters['end_date'])
+        metrics = run_backtest(scene_parameters, df)
+        producer = get_kafka_producer()
+        producer.send(RESULT_TOPIC, metrics)
+        producer.flush()
+
+@app.on_event("startup")
+def start_kafka_consumer():
+    threading.Thread(target=consume_scene_parameters).start()
 
 @app.on_event("startup") # TODO update the code with lifespan dependency
 def on_startup():
@@ -21,6 +39,7 @@ def on_startup():
     initialize_data(db)
 
 app.include_router(auth_router, prefix="/auth", tags=["auth"])
+producer = get_kafka_producer()
 
 @app.get('/health')
 def check_health():
@@ -58,6 +77,18 @@ def create_scene(scene: schemas.SceneCreate, db: Session = Depends(get_db)):
     db.add(db_scene)
     db.commit()
     db.refresh(db_scene)
+
+    # Send scene parameters to Kafka
+    scene_parameters = {
+        'period': db_scene.period,
+        'indicator_id': db_scene.indicator_id,
+        'stock_name': db_scene.stock_id,
+        'start_date': db_scene.start_date.strftime('%Y-%m-%d'),
+        'end_date': db_scene.end_date.strftime('%Y-%m-%d')
+    }
+    producer.send(SCENE_TOPIC, scene_parameters)
+    producer.flush()
+
     return db_scene
 
 @app.get('/scenes/', response_model=List[schemas.Scene])

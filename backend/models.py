@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, Float, Date, ForeignKey, TIMESTAMP, String, Text, text
+from sqlalchemy import Boolean, Column, Integer, Float, Date, ForeignKey, TIMESTAMP, String, Text, text
 from sqlalchemy.orm import relationship
 from .database import Base
 
@@ -9,6 +9,15 @@ class Indicator(Base):
     symbol = Column(String, nullable=False, unique=True)
     description = Column(Text)
 
+class User(Base):
+    __tablename__ = 'users'
+    id = Column(Integer, primary_key=True, index=True)
+    email = Column(String, unique=True, index=True, nullable=False)
+    hashed_password = Column(String, nullable=False)
+    full_name = Column(String, nullable=True)
+    is_active = Column(Boolean, default=True)
+    is_superuser = Column(Boolean, default=False)
+    
 class Stock(Base):
     __tablename__ = 'stocks'
     id = Column(Integer, primary_key=True, index=True)

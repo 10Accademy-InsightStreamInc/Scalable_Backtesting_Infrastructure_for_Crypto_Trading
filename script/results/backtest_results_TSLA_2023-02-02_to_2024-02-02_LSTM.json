@@ -1,0 +1,16 @@
+{
+    "key": "TSLA_2023-02-02_2024-02-02_TSLA_LSTM",
+    "_SYMBOL": "TSLA",
+    "initial_cash": 1222.0,
+    "start_date": "2023-02-02",
+    "end_date": "2024-02-02",
+    "indicator": "LSTM",
+    "metrics": {
+        "return": 0.014484449221147453,
+        "number_of_trades": 12,
+        "winning_trades": 5,
+        "losing_trades": 7,
+        "max_drawdown": 5.331468320713841,
+        "sharpe_ratio": -0.4655951075857152
+    }
+}

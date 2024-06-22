@@ -102,8 +102,6 @@ def get_user_input():
     indicator = indicators.get(indicator_choice, 'SMA')  # Default to SMA if invalid choice
 
     return initial_cash, start_date, end_date, ticker, indicator
-def generate_unique_key(ticker, start_date, end_date):
-    return f"{ticker}_{start_date}_{end_date}"
 
 def save_results_to_csv(results, csv_file):
     df = pd.DataFrame([results])

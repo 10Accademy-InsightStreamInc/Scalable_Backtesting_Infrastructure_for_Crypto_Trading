@@ -2,6 +2,7 @@ from typing import List
 from fastapi import FastAPI, Depends, HTTPException
 from sqlalchemy.orm import Session
 import pandas as pd
+import yfinance as yf
 import threading
 
 from . import models, schemas, database
@@ -23,8 +24,11 @@ def consume_scene_parameters():
         scene_parameters = message.value
         print(f"Received scene parameters: {scene_parameters}")
         # Run the backtest and produce the results
-        df = fetch_data(scene_parameters['start_date'], scene_parameters['end_date'])
-        metrics = run_backtest(scene_parameters, df)
+        # df = fetch_data(scene_parameters['start_date'], scene_parameters['end_date'])
+        # def download_data(ticker, start_date, end_date):
+        data = yf.download(scene_parameters.stock.symbol, start=scene_parameters['start_date'], end=scene_parameters['end_date'])
+        
+        metrics = run_backtest(scene_parameters, data)
         producer = get_kafka_producer()
         producer.send(RESULT_TOPIC, metrics)
         producer.flush()
@@ -74,6 +78,12 @@ def read_stocks(skip: int = 0, limit: int = 20, db: Session = Depends(get_db)):
 @app.post('/scenes/', response_model=schemas.Scene)
 def create_scene(scene: schemas.SceneCreate, db: Session = Depends(get_db)):
     db_scene = models.Scene(**scene.model_dump())
+    # check if the stock is already in the database
+    print("the scene is: ", db_scene.indicator)
+    if not db.query(models.Stock).filter(models.Stock.id == db_scene.stock_id).first():
+        raise HTTPException(status_code=400, detail="Stock ID does not exists")
+    if not db.query(models.Indicator).filter(models.Indicator.id == db_scene.indicator_id).first():
+        raise HTTPException(status_code=400, detail="Indicator ID does not exists")
     db.add(db_scene)
     db.commit()
     db.refresh(db_scene)
@@ -81,8 +91,8 @@ def create_scene(scene: schemas.SceneCreate, db: Session = Depends(get_db)):
     # Send scene parameters to Kafka
     scene_parameters = {
         'period': db_scene.period,
-        'indicator_id': db_scene.indicator_id,
-        'stock_name': db_scene.stock_id,
+        'indicator_symbol': db_scene.indicator.symbol,
+        'stock_symbol': db_scene.stock.symbol,
         'start_date': db_scene.start_date.strftime('%Y-%m-%d'),
         'end_date': db_scene.end_date.strftime('%Y-%m-%d')
     }

@@ -1,0 +1,16 @@
+{
+    "key": "TSLA_2023-01-01_2024-01-01_TSLA_SMA",
+    "_SYMBOL": "TSLA",
+    "initial_cash": 10000.0,
+    "start_date": "2023-01-01",
+    "end_date": "2024-01-01",
+    "indicator": "SMA",
+    "metrics": {
+        "return": -0.01779600067138672,
+        "number_of_trades": 11,
+        "winning_trades": 5,
+        "losing_trades": 6,
+        "max_drawdown": 0.684298939033494,
+        "sharpe_ratio": "N/A"
+    }
+}

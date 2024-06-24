@@ -1,0 +1,16 @@
+{
+    "key": "AMZN_2023-04-04_2024-05-03_AMZN_RSI",
+    "_SYMBOL": "AMZN",
+    "initial_cash": 1000.0,
+    "start_date": "2023-04-04",
+    "end_date": "2024-05-03",
+    "indicator": "RSI",
+    "metrics": {
+        "return": 0.025400009155273438,
+        "number_of_trades": 16,
+        "winning_trades": 9,
+        "losing_trades": 7,
+        "max_drawdown": 1.8970298561676777,
+        "sharpe_ratio": 0.4183888647054258
+    }
+}

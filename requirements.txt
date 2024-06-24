@@ -3,12 +3,12 @@ numpy
 matplotlib
 scikit-learn
 backtrader
-freqtrade
 yfinance
 fastapi 
 uvicorn 
-psycopg2
+psycopg2-binary
 sqlalchemy
 mlflow
 passlib
 python-jose
+kafka-python

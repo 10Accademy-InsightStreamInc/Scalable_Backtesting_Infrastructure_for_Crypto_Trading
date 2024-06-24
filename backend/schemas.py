@@ -7,7 +7,7 @@ class Token(BaseModel):
     token_type: str
 
 class TokenData(BaseModel):
-    email: str | None = None
+    email: str 
     
 class UserBase(BaseModel):
     email: EmailStr
@@ -60,6 +60,7 @@ class SceneBase(BaseModel):
     start_date: date
     end_date: date
     indicator_id: int
+    stock_id: int
 
 class SceneCreate(SceneBase):
     pass
@@ -68,6 +69,7 @@ class Scene(SceneBase):
     id: int
     backtests: List['BacktestResult'] = []
     indicator: Indicator
+    stock: Stock
 
     class Config:
         orm_mode = True

@@ -1,4 +1,4 @@
-from sqlalchemy import Boolean, Column, Integer, Float, Date, ForeignKey, TIMESTAMP, String, Text, text
+from sqlalchemy import Boolean, Column, Integer, Float, Date, ForeignKey, TIMESTAMP, String, Text, text, UniqueConstraint
 from sqlalchemy.orm import relationship
 from .database import Base
 
@@ -36,6 +36,8 @@ class Scene(Base):
     backtests = relationship('BacktestResult', back_populates='scene')
     stock = relationship('Stock')
     indicator = relationship('Indicator')
+
+    __table_args__ = (UniqueConstraint('start_date', 'end_date', 'indicator_id', 'stock_id', name='_scene_uc'),)
 
 class BacktestResult(Base):
     __tablename__ = 'backtest_results'

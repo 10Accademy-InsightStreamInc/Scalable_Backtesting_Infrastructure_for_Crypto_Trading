@@ -1,37 +1,41 @@
-CREATE TABLE backtest_results (
-    id SERIAL PRIMARY KEY,
-    scene_id INT REFERENCES scenes(id),
-    gross_profit FLOAT NOT NULL,
-    net_profit FLOAT NOT NULL,
-    number_of_trades INT NOT NULL,
-    winning_trades INT,
-    losing_trades INT,
-    max_drawdown FLOAT,
-    sharpe_ratio FLOAT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+CREATE TABLE "indicators" (
+  "id" SERIAL PRIMARY KEY,
+  "name" VARCHAR(255) NOT NULL,
+  "symbol" VARCHAR(255) NOT NULL,
+  "description" TEXT
 );
 
-CREATE TABLE scenes (
-    id SERIAL PRIMARY KEY,
-    period INT NOT NULL,
-    start_date DATE NOT NULL,
-    end_date DATE NOT NULL
+CREATE TABLE "stocks" (
+  "id" SERIAL PRIMARY KEY,
+  "name" VARCHAR(255) NOT NULL,
+  "symbol" VARCHAR(255) NOT NULL,
+  "description" TEXT
 );
 
-CREATE TABLE  IF NOT EXISTS users (
-  "id" SERIAL PRIMARY KEY NOT NULL,
-  "name" varchar NOT NULL,
-  "email" varchar NOT NULL,
-  "password" varchar NOT NULL,
-  "created_at" timestamp NOT NULL
-  "updated_at" timestamp NOT NULL
-  "deleted_at" timestamp NOT NULL
-
-  UNIQUE (email)
+CREATE TABLE "scenes" (
+  "id" SERIAL PRIMARY KEY,
+  "period" INT NOT NULL,
+  "start_date" DATE NOT NULL,
+  "end_date" DATE NOT NULL,
+  "stock_id" INT,
+  "indicator_id" INT
 );
 
-CREATE TABLE indicators (
-    id SERIAL PRIMARY KEY,
-    name VARCHAR(50) NOT NULL,
-    description TEXT
+CREATE TABLE "backtest_results" (
+  "id" SERIAL PRIMARY KEY,
+  "scene_id" INT,
+  "gross_profit" DECIMAL(15,2),
+  "net_profit" DECIMAL(15,2),
+  "number_of_trades" INT,
+  "winning_trades" INT,
+  "losing_trades" INT,
+  "max_drawdown" DECIMAL(5,2),
+  "sharpe_ratio" DECIMAL(5,2),
+  "created_at" TIMESTAMP DEFAULT (CURRENT_TIMESTAMP)
 );
+
+ALTER TABLE "scenes" ADD FOREIGN KEY ("indicator_id") REFERENCES "indicators" ("id");
+
+ALTER TABLE "scenes" ADD FOREIGN KEY ("stock_id") REFERENCES "stocks" ("id");
+
+ALTER TABLE "backtest_results" ADD FOREIGN KEY ("scene_id") REFERENCES "scenes" ("id");

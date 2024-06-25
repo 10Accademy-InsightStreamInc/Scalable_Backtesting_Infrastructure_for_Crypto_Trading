@@ -1,5 +1,6 @@
 from typing import List
 from fastapi import FastAPI, Depends, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy.exc import IntegrityError
 import pandas as pd
@@ -9,7 +10,7 @@ from . import models, schemas, database
 from .auth import router as auth_router
 from kafka_topic.kafka_config import get_kafka_producer, SCENE_TOPIC, RESULT_TOPIC, get_kafka_consumer
 
-from backend.utils.backtest import run_backtest
+from scripts.backtesting.main import run_backtest
 from backend.utils.init_data import initialize_data
 
 get_db = database.get_db
@@ -20,6 +21,17 @@ producer = get_kafka_producer()
 models.Base.metadata.create_all(bind=database.engine)
 
 app = FastAPI()
+
+# allow all origins
+origins = ["*"]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.on_event("startup") # TODO update the code with lifespan dependency
 def start_kafka_consumer():

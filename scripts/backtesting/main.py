@@ -1,7 +1,16 @@
 import yfinance as yf
 import backtrader as bt
-from util.user_input import get_user_input
-from analyzers.metrics_analyzer import MetricsAnalyzer
+import os, sys
+# from util.user_input import get_user_input
+# Assuming this script is two levels deep in the project directory
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../'))
+if project_root not in sys.path:
+    sys.path.append(project_root)
+
+print("The project root is: ", os.getcwd())
+
+from scripts.backtesting.analyzers.metrics_analyzer import MetricsAnalyzer
+import scripts.backtesting.strategies as strategies
 
 def run_backtest(config):
     initial_cash = config['initial_cash']
@@ -63,6 +72,6 @@ def run_backtest(config):
     print(f"Winning Trades: {metrics['winning_trades']}")
     print(f"Losing Trades: {metrics['losing_trades']}")
 
-if __name__ == "__main__":
-    config = get_user_input()
-    run_backtest(config)
+# if __name__ == "__main__":
+#     config = get_user_input()
+#     run_backtest(config)

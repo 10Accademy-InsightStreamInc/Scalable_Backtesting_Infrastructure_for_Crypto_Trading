@@ -1,7 +1,6 @@
 import yfinance as yf
 import backtrader as bt
 import os, sys
-# from util.user_input import get_user_input
 # Assuming this script is two levels deep in the project directory
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../'))
 if project_root not in sys.path:
@@ -11,14 +10,15 @@ print("The project root is: ", os.getcwd())
 
 from scripts.backtesting.analyzers.metrics_analyzer import MetricsAnalyzer
 import scripts.backtesting.strategies as strategies
+from scripts.backtesting.util.user_input import get_user_input
 
 def run_backtest(config):
-    initial_cash = config['initial_cash']
+    initial_cash = 500
     start_date = config['start_date']
     end_date = config['end_date']
-    ticker = config['ticker']
-    indicator = config['indicator']
-
+    ticker = config['stock_symbol']
+    indicator = config['indicator_symbol']
+    print("The config is: ",ticker, start_date, end_date, indicator)
     # Fetch historical data
     try:
         data = yf.download(ticker, start=start_date, end=end_date)
@@ -45,12 +45,12 @@ def run_backtest(config):
     elif indicator == 'RSI':
         from strategies.rsi_strategy import RSIStrategy
         cerebro.addstrategy(RSIStrategy)
-    elif indicator == 'Bollinger Bands':
+    elif indicator == 'BB':
         from strategies.bollinger_bands_strategy import BollingerBandsStrategy
         cerebro.addstrategy(BollingerBandsStrategy)
     else:
         print("Invalid indicator selected.")
-        return
+        yield "Invalid indicator selected."
 
     # Add analyzers
     cerebro.addanalyzer(bt.analyzers.SharpeRatio, riskfreerate=0.0, annualized=True)
@@ -72,6 +72,22 @@ def run_backtest(config):
     print(f"Winning Trades: {metrics['winning_trades']}")
     print(f"Losing Trades: {metrics['losing_trades']}")
 
-# if __name__ == "__main__":
-#     config = get_user_input()
-#     run_backtest(config)
+    # return {
+    #     'initial_cash': initial_cash,
+    #     'final_value': cerebro.broker.getvalue(),
+    #     'sharpe_ratio': strat.analyzers.sharperatio.get_analysis(),
+    #     'return': metrics['return'],
+    #     'total_trades': metrics['trades'],
+    #     'winning_trades': metrics['winning_trades'],
+    #     'losing_trades': metrics['losing_trades']
+    # }
+
+if __name__ == "__main__":
+    # config = {
+    #     'start_date': '2020-01-01',
+    #     'end_date': '2021-01-01',
+    #     'stock_symbol': 'NVDA',
+    #     'indicator_symbol': 'SMA'
+    # }
+    config = get_user_input()
+    run_backtest(config)

@@ -6,6 +6,7 @@ from sqlalchemy.exc import IntegrityError
 import pandas as pd
 import threading
 import logging
+import time
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -91,11 +92,13 @@ def create_scene(scene: schemas.SceneCreate, db: Session = Depends(get_db)):
 
         # Send scene parameters to Kafka
         scene_parameters = {
+            'scene_id': db_scene.id,
             'period': db_scene.period,
+            'initial_cash': 500,
             'indicator_name': db_scene.indicator.name,
-            'indicator_symbol': db_scene.indicator.symbol,
+            'indicator': db_scene.indicator.symbol,
             'stock_name': db_scene.stock.name,
-            'stock_symbol': db_scene.stock.symbol,
+            'ticker': db_scene.stock.symbol,
             'start_date': db_scene.start_date.strftime('%Y-%m-%d'),
             'end_date': db_scene.end_date.strftime('%Y-%m-%d')
         }
@@ -134,6 +137,9 @@ def read_scene(scene_id: int, db: Session = Depends(get_db)):
 @app.get('/scenes/', response_model=List[schemas.Scene])
 def read_scenes(skip: int = 0, limit: int = 10, db: Session = Depends(get_db)):
     scenes = db.query(models.Scene).offset(skip).limit(limit).all()
+    for scene in scenes:
+        for backtest in scene.backtests:
+            logger.info(f"Backtest Result: {backtest.__dict__}")
     return scenes
 
 @app.post('/backtests/{scene_id}', response_model=List[schemas.BacktestResult])
@@ -195,18 +201,33 @@ def fetch_existing_backtest(scene_parameters):
     return None
 
 def consume_scene_parameters():
+    db = next(get_db())
     consumer = get_kafka_consumer(SCENE_TOPIC)
-    for message in consumer:
-        scene_parameters = message.value
-        logger.info(f"Received scene parameters: {scene_parameters}")
-        existing_results = fetch_existing_backtest(scene_parameters)
-        if existing_results:
-            logger.info(f"Using existing backtest results for parameters: {scene_parameters}")
-            continue
-        # Run the backtest if no existing results
-        # df = fetch_data(scene_parameters['start_date'], scene_parameters['end_date'])
-        metrics = run_backtest(scene_parameters)
-        producer = get_kafka_producer()
-        logger.info(f"Sending backtest results: {metrics}")
-        producer.send(RESULT_TOPIC, metrics)
-        producer.flush()
+    producer = get_kafka_producer()
+    while True:
+        try:
+            for message in consumer:
+                scene_parameters = message.value
+                logger.info(f"Received scene parameters: {scene_parameters}")
+                existing_results = fetch_existing_backtest(scene_parameters)
+                if existing_results:
+                    logger.info(f"Using existing backtest results for parameters: {scene_parameters}")
+                    continue
+                # Run the backtest if no existing results
+                # df = fetch_data(scene_parameters['start_date'], scene_parameters['end_date'])
+                metrics = run_backtest(scene_parameters)
+                logger.info(f"Sending backtest results: {metrics}")
+                # Attach backtest results to scene
+                scene_id = scene_parameters['scene_id']
+                    
+                db_backtest_result = models.BacktestResult(scene_id=scene_id, **metrics)
+                db.add(db_backtest_result)
+                db.commit()
+                db.refresh(db_backtest_result)
+
+                producer.send(RESULT_TOPIC, metrics)
+                producer.flush()
+                logger.info("Backtest results sent to Kafka")
+        except Exception as e:
+            logger.error(f"Error in consumer loop: {e}")
+            time.sleep(5)  # Sleep for a while before retrying

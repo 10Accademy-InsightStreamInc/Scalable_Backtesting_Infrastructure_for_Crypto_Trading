@@ -41,14 +41,15 @@ class Scene(Base):
 
 class BacktestResult(Base):
     __tablename__ = 'backtest_results'
+    # __table_args__ = (UniqueConstraint('scene_id', 'indicator_id', 'stock_id', name='_backtest_uc'),)
     id = Column(Integer, primary_key=True, index=True)
     scene_id = Column(Integer, ForeignKey('scenes.id'))
-    gross_profit = Column(Float, nullable=False)
-    net_profit = Column(Float, nullable=False)
-    number_of_trades = Column(Integer, nullable=False)
+    initial_cash = Column(Float, nullable=False)
+    final_value = Column(Float, nullable=False)
+    percentage_return = Column(Float)
+    total_trades = Column(Integer)
     winning_trades = Column(Integer)
     losing_trades = Column(Integer)
-    max_drawdown = Column(Float)
     sharpe_ratio = Column(Float)
     created_at = Column(TIMESTAMP, server_default=text('CURRENT_TIMESTAMP'))
     scene = relationship('Scene', back_populates='backtests')

@@ -1,7 +1,13 @@
 import yfinance as yf
 import backtrader as bt
-from util.user_input import get_user_input
-from analyzers.metrics_analyzer import MetricsAnalyzer
+import os, sys
+
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../'))
+if project_root not in sys.path:
+    sys.path.append(project_root)
+
+from scripts.backtesting.util.user_input import get_user_input
+from scripts.backtesting.analyzers.metrics_analyzer import MetricsAnalyzer
 
 def run_backtest(config):
     initial_cash = config['initial_cash']
@@ -25,27 +31,27 @@ def run_backtest(config):
 
     # Add strategy based on selected indicator
     if indicator == 'SMA':
-        from strategies.sma_strategy import SMAStrategy
+        from scripts.backtesting.strategies.sma_strategy import SMAStrategy
         cerebro.addstrategy(SMAStrategy)
     elif indicator == 'LSTM':
-        from strategies.lstm_strategy import LSTMStrategy
+        from scripts.backtesting.strategies.lstm_strategy import LSTMStrategy
         cerebro.addstrategy(LSTMStrategy)
     elif indicator == 'MACD':
-        from strategies.macd_strategy import MACDStrategy
+        from scripts.backtesting.strategies.macd_strategy import MACDStrategy
         cerebro.addstrategy(MACDStrategy)
     elif indicator == 'RSI':
-        from strategies.rsi_strategy import RSIStrategy
+        from scripts.backtesting.strategies.rsi_strategy import RSIStrategy
         cerebro.addstrategy(RSIStrategy)
     elif indicator == 'Bollinger Bands':
-        from strategies.bollinger_bands_strategy import BollingerBandsStrategy
+        from scripts.backtesting.strategies.bollinger_bands_strategy import BollingerBandsStrategy
         cerebro.addstrategy(BollingerBandsStrategy)
     else:
         print("Invalid indicator selected.")
         return
 
     # Add analyzers
-    cerebro.addanalyzer(bt.analyzers.SharpeRatio, riskfreerate=0.0, annualized=True)
-    cerebro.addanalyzer(MetricsAnalyzer)
+    cerebro.addanalyzer(bt.analyzers.SharpeRatio, riskfreerate=0.0, _name='sharperatio')
+    cerebro.addanalyzer(MetricsAnalyzer, _name='MetricsAnalyzer')
 
     # Run backtest
     results = cerebro.run()
@@ -54,7 +60,7 @@ def run_backtest(config):
     # Print results
     print(f"Initial Cash: {initial_cash}")
     print(f"Final Value: {cerebro.broker.getvalue()}")
-    print(f"Sharpe Ratio: {strat.analyzers.sharperatio.get_analysis()}")
+    print(f"Sharpe Ratio: {strat.analyzers.sharperatio.get_analysis()['sharperatio']}")
 
     metrics_analyzer = strat.analyzers.getbyname('MetricsAnalyzer')
     metrics = metrics_analyzer.get_analysis()
@@ -63,6 +69,23 @@ def run_backtest(config):
     print(f"Winning Trades: {metrics['winning_trades']}")
     print(f"Losing Trades: {metrics['losing_trades']}")
 
+    return {
+        'initial_cash': initial_cash,
+        'final_value': cerebro.broker.getvalue(),
+        'sharpe_ratio': strat.analyzers.sharperatio.get_analysis()['sharperatio'],
+        'percentage_return': metrics['return'],
+        'total_trades': metrics['trades'],
+        'winning_trades': metrics['winning_trades'],
+        'losing_trades': metrics['losing_trades']
+    }
+
 if __name__ == "__main__":
-    config = get_user_input()
+    # initial_cash, start_date, end_date, ticker, indicator = get_user_input()
+    config = {
+        'initial_cash': 500,
+        'start_date': "2024-02-01",
+        'end_date': "2024-06-11",
+        'ticker': "NVDA",
+        'indicator': "SMA"
+    }
     run_backtest(config)

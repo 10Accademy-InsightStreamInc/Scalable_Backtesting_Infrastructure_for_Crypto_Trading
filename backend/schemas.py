@@ -1,7 +1,32 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr
 from typing import List, Optional
 from datetime import date, datetime
 
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+class TokenData(BaseModel):
+    email: str 
+    
+class UserBase(BaseModel):
+    email: EmailStr
+    full_name: Optional[str] = None
+    is_active: Optional[bool] = True
+    is_superuser: Optional[bool] = False
+
+class UserCreate(UserBase):
+    password: str
+
+class User(UserBase):
+    id: int
+
+    class Config:
+        orm_mode = True
+
+class UserInDB(User):
+    hashed_password: str
+    
 class IndicatorBase(BaseModel):
     name: str
     symbol: str
@@ -35,6 +60,7 @@ class SceneBase(BaseModel):
     start_date: date
     end_date: date
     indicator_id: int
+    stock_id: int
 
 class SceneCreate(SceneBase):
     pass
@@ -43,19 +69,20 @@ class Scene(SceneBase):
     id: int
     backtests: List['BacktestResult'] = []
     indicator: Indicator
+    stock: Stock
 
     class Config:
         orm_mode = True
 
 class BacktestResultBase(BaseModel):
     scene_id: int
-    gross_profit: float
-    net_profit: float
-    number_of_trades: int
-    winning_trades: Optional[int] = None
-    losing_trades: Optional[int] = None
-    max_drawdown: Optional[float] = None
-    sharpe_ratio: Optional[float] = None
+    initial_cash: float
+    final_value: float
+    percentage_return: float
+    total_trades: int
+    winning_trades: int
+    losing_trades: int
+    sharpe_ratio: Optional[int] = None
 
 class BacktestResultCreate(BacktestResultBase):
     pass

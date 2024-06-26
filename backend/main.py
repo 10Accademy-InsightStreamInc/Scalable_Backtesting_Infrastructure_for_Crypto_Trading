@@ -5,6 +5,10 @@ from sqlalchemy.orm import Session, joinedload
 from sqlalchemy.exc import IntegrityError
 import pandas as pd
 import threading
+import logging
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 from . import models, schemas, database
 from .auth import router as auth_router
@@ -36,11 +40,13 @@ app.add_middleware(
 @app.on_event("startup") # TODO update the code with lifespan dependency
 def start_kafka_consumer():
     threading.Thread(target=consume_scene_parameters).start()
+    print("Kafka consumer started")
 
 @app.on_event("startup") # TODO update the code with lifespan dependency
 def on_startup():
     db = next(get_db())
     initialize_data(db)
+    print("Data initialized")
 
 app.include_router(auth_router, prefix="/auth", tags=["auth"])
 
@@ -95,7 +101,9 @@ def create_scene(scene: schemas.SceneCreate, db: Session = Depends(get_db)):
         }
         print("Sending scene parameters to Kafka:", scene_parameters)
         producer.send(SCENE_TOPIC, scene_parameters)
+        print("Scene parameters sent to Kafka")
         producer.flush()
+        print("Scene flushed successfully:")
 
         return db_scene
     except IntegrityError:
@@ -190,15 +198,15 @@ def consume_scene_parameters():
     consumer = get_kafka_consumer(SCENE_TOPIC)
     for message in consumer:
         scene_parameters = message.value
-        print(f"Received scene parameters: {scene_parameters}")
+        logger.info(f"Received scene parameters: {scene_parameters}")
         existing_results = fetch_existing_backtest(scene_parameters)
         if existing_results:
-            print(f"Using existing backtest results for parameters: {scene_parameters}")
+            logger.info(f"Using existing backtest results for parameters: {scene_parameters}")
             continue
         # Run the backtest if no existing results
-        df = fetch_data(scene_parameters['start_date'], scene_parameters['end_date'])
-        metrics = run_backtest(scene_parameters, df)
+        # df = fetch_data(scene_parameters['start_date'], scene_parameters['end_date'])
+        metrics = run_backtest(scene_parameters)
         producer = get_kafka_producer()
-        print(f"Sending backtest results: {metrics}")
+        logger.info(f"Sending backtest results: {metrics}")
         producer.send(RESULT_TOPIC, metrics)
         producer.flush()

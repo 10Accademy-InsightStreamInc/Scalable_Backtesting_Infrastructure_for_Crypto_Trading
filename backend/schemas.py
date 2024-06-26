@@ -76,13 +76,13 @@ class Scene(SceneBase):
 
 class BacktestResultBase(BaseModel):
     scene_id: int
-    gross_profit: float
-    net_profit: float
-    number_of_trades: int
-    winning_trades: Optional[int] = None
-    losing_trades: Optional[int] = None
-    max_drawdown: Optional[float] = None
-    sharpe_ratio: Optional[float] = None
+    initial_cash: float
+    final_value: float
+    percentage_return: float
+    total_trades: int
+    winning_trades: int
+    losing_trades: int
+    sharpe_ratio: float
 
 class BacktestResultCreate(BacktestResultBase):
     pass

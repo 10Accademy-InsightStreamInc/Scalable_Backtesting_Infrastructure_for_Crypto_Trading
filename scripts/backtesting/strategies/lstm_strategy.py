@@ -42,7 +42,7 @@ def calculate_sharpe_ratio(returns, risk_free_rate=0):
     excess_returns = returns - risk_free_rate
     return np.mean(excess_returns) / np.std(excess_returns)
 
-def run_backtest_with_lstm(scene_parameters, df):
+def run_backtest_with_lstm(df):
     lstm_model, scaler = load_lstm_model_and_scaler()
     predictions = make_lstm_predictions(lstm_model, scaler, df)
     

@@ -5,6 +5,7 @@ import BacktestForm from './components/BacktestForm';
 import Signup from './components/Signup';
 import Login from './components/Login';
 import Profile from './components/Profile';
+import ScenesList from './components/SceneList';
 
 const PrivateRoute = ({ element: Element, ...rest }) => {
   const token = localStorage.getItem('token');
@@ -20,7 +21,11 @@ function App() {
           <Routes>
             <Route path="/" element={<Navigate to="/login" />} />
             <Route path="/signup" element={<Signup />} />
+            {/* if the user is already logged in and tries to see /login redirect to /scenes */}
+            <Route path="/login" element={<Navigate to="/scenes" />} />
+            <Route path="/signup" element={<Navigate to="/scenes" />} />
             <Route path="/login" element={<Login />} />
+            <Route path="/scenes" element={<PrivateRoute element={ScenesList} />} />
             <Route path="/backtest" element={<PrivateRoute element={BacktestForm} />} />
             <Route path="/profile" element={<PrivateRoute element={Profile} />} />
           </Routes>

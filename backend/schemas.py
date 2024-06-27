@@ -94,3 +94,16 @@ class BacktestResult(BacktestResultBase):
 
     class Config:
         orm_mode = True
+
+class StockData(BaseModel):
+    date: datetime
+    symbol: str
+    open: float
+    high: float
+    low: float
+    close: float
+    adj_close: float
+    volume: float
+
+    class Config:
+        orm_mode = True

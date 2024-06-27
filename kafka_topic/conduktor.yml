@@ -16,7 +16,7 @@ services:
   conduktor-console:
     image: conduktor/conduktor-console:1.24.0
     ports:
-      - "8080:8080"
+      - "9090:9090"
     volumes:
       - conduktor_data:/var/conduktor
     environment:

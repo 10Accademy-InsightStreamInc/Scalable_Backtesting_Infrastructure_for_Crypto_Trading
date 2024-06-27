@@ -172,6 +172,22 @@ def perform_backtest(scene_id: int, db: Session = Depends(get_db)):
 
     return backtest_results
 
+@app.get("/stock_data/", response_model=List[schemas.StockData])
+def read_stock_data(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+    stock_data = db.query(models.StockData).offset(skip).limit(limit).all()
+    return stock_data
+
+@app.get("/stock_data/{symbol}", response_model=List[schemas.StockData])
+def read_stock_data(symbol: str, db: Session = Depends(get_db)):
+    stock_data = db.query(models.StockData).filter(models.StockData.symbol == symbol).limit(100).all()
+    return stock_data
+
+#gets stock data from db from start_date to end_date
+@app.get("/stock_data/{symbol}/{from_date}/{to_date}/", response_model=List[schemas.StockData])
+def read_stock_data(symbol: str, from_date: str, to_date: str, db: Session = Depends(get_db)):
+    stock_data = db.query(models.StockData).filter(models.StockData.symbol == symbol, models.StockData.date >= from_date, models.StockData.date <= to_date).all()
+    return stock_data
+
 @app.get('/run_backtest/', response_model=List[schemas.BacktestResult])
 def run_backtests(scene: schemas.SceneCreate, db: Session = Depends(get_db)):
     db_scene = models.Scene(**scene.model_dump())

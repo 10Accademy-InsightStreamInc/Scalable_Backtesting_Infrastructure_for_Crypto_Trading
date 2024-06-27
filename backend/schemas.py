@@ -83,6 +83,7 @@ class BacktestResultBase(BaseModel):
     winning_trades: int
     losing_trades: int
     sharpe_ratio: Optional[float] = None
+    max_drawdown: Optional[float] = None
 
 class BacktestResultCreate(BacktestResultBase):
     pass

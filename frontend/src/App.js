@@ -5,6 +5,11 @@ import BacktestForm from './components/BacktestForm';
 import Signup from './components/Signup';
 import Login from './components/Login';
 
+const PrivateRoute = ({ element: Element, ...rest }) => {
+  const token = localStorage.getItem('token');
+  return token ? <Element {...rest} /> : <Navigate to="/login" />;
+};
+
 function App() {
   return (
     <Router>
@@ -15,7 +20,7 @@ function App() {
             <Route path="/" element={<Navigate to="/login" />} />
             <Route path="/signup" element={<Signup />} />
             <Route path="/login" element={<Login />} />
-            <Route path="/backtest" element={<BacktestForm />} />
+            <Route path="/backtest" element={<PrivateRoute element={BacktestForm} />} />
           </Routes>
         </div>
       </div>

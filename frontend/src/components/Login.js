@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 const validationSchema = Yup.object({
   username: Yup.string()
@@ -16,15 +16,42 @@ const validationSchema = Yup.object({
 });
 
 function Login() {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const navigate = useNavigate();
+
   const formik = useFormik({
     initialValues: {
       username: '',
       password: '',
     },
     validationSchema,
-    onSubmit: (values) => {
-      console.log(values);
-      // Handle login
+    onSubmit: async (values) => {
+      setLoading(true);
+      setError(null);
+
+      const formData = new FormData();
+      formData.append('username', values.username);
+      formData.append('password', values.password);
+
+      try {
+        const response = await fetch('http://127.0.0.1:8000/auth/token', {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (!response.ok) {
+          throw new Error('Invalid username or password');
+        }
+
+        const data = await response.json();
+        localStorage.setItem('token', data.token);
+        navigate('/backtest');
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
     },
   });
 
@@ -68,11 +95,16 @@ function Login() {
             ) : null}
           </div>
           <div className="form-control mt-4">
-            <button type="submit" className="btn btn-primary bg-neutral-600" style={{ color: 'white' }}>
-              Login
+            <button type="submit" className="btn btn-primary bg-neutral-600" style={{ color: 'white' }} disabled={loading}>
+              {loading ? 'Logging in...' : 'Login'}
             </button>
           </div>
         </form>
+        {error && (
+          <div className="alert alert-error mt-4">
+            <span>{error}</span>
+          </div>
+        )}
         <div className="mt-4">
           <p>Don't have an account? <Link to="/signup" className="text-blue-500">Sign up here</Link></p>
         </div>

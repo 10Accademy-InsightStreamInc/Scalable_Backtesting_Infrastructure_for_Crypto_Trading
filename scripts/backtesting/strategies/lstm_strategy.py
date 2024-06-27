@@ -36,11 +36,12 @@ def calculate_max_drawdown(portfolio_values):
             max_drawdown = drawdown
     return max_drawdown
 
-import numpy as np
-
 def calculate_sharpe_ratio(returns, risk_free_rate=0):
     excess_returns = returns - risk_free_rate
     return np.mean(excess_returns) / np.std(excess_returns)
+
+def calculate_overall_percentage_return(initial_value, final_value):
+    return (final_value - initial_value) / initial_value
 
 def run_backtest_with_lstm(df):
     lstm_model, scaler = load_lstm_model_and_scaler()
@@ -66,7 +67,7 @@ def run_backtest_with_lstm(df):
     
     # Calculate metrics
     final_value = cash + position * df['Close'].values[-1]
-    gross_profit = final_value - initial_cash
+    overall_percentage_return = calculate_overall_percentage_return(initial_cash, final_value)
     returns = np.diff(portfolio_values) / portfolio_values[:-1]
     sharpe_ratio = calculate_sharpe_ratio(returns)
     max_drawdown = calculate_max_drawdown(portfolio_values)
@@ -76,7 +77,7 @@ def run_backtest_with_lstm(df):
         'total_trades': len(predictions),  # Example, adjust as needed
         'winning_trades': sum(1 for r in returns if r > 0),
         'losing_trades': sum(1 for r in returns if r <= 0),
-        'percentage_return': returns,
+        'percentage_return': overall_percentage_return,
         'max_drawdown': max_drawdown,
         'sharpe_ratio': sharpe_ratio
     }

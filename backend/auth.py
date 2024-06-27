@@ -68,6 +68,7 @@ def get_current_user(db: Session = Depends(database.get_db), token: str = Depend
 
 @router.post("/users/", response_model=schemas.User)
 def create_user(user: schemas.UserCreate, db: Session = Depends(database.get_db)):
+    print("The user post is ::::::::: ", user)
     hashed_password = get_password_hash(user.password)
     db_user = models.User(email=user.email, hashed_password=hashed_password, full_name=user.full_name)
     if db.query(models.User).filter(models.User.email == db_user.email).first():

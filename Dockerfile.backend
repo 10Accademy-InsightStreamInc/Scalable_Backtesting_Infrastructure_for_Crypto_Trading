@@ -1,0 +1,33 @@
+# Use the official Python base image
+FROM python:3.9-slim
+
+# Set the working directory in the container
+WORKDIR /app
+
+# Copy the requirements file into the container
+COPY requirements.txt .
+
+# Install the required Python packages
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy the entire backend project into the container
+COPY ./backend .
+
+# Expose the port that FastAPI runs on
+EXPOSE 8000
+
+# Set environment variables for the FastAPI app
+ENV PYTHONUNBUFFERED=1
+
+ENV BINANCE_API_KEY="FN6iy8IhLMbDR3kVEYp1ZqsN6lj0fZXFRQaRZeJsWuLz6Is7DkVvyb70fwPGDY3B"
+ENV DATABASE_URL="postgresql://trading_db_av2v_user:210M6MA9QKEEgVdiasnUdMQDBNN417oy@dpg-cpqojbqj1k6c73bkqq3g-a.oregon-postgres.render.com/trading_db_av2v"
+ENV PYCOPG_DATABASE_URL = "postgresql+psycopg2://trading_db_av2v_user:210M6MA9QKEEgVdiasnUdMQDBNN417oy@dpg-cpqojbqj1k6c73bkqq3g-a.oregon-postgres.render.com/trading_db_av2v"
+ENV DB_USERNAME='group3'
+ENV DB_PASSWORD='group3@week9'
+ENV DB_HOST='g3.10academy.org'
+ENV DB_PORT=5432
+ENV DB_DATABASE='backtest'
+ENV AWS_DATABASE_URL="postgresql+psycopg2://group3:group3%40week9@g3.10academy.org/backtest"
+
+# Run the FastAPI app with Uvicorn
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]

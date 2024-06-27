@@ -68,7 +68,7 @@ def run_backtest(config):
         mlflow.log_param("indicator", indicator)
 
         final_value = cerebro.broker.getvalue()
-        sharpe_ratio = strat.analyzers.sharperatio.get_analysis()['sharperatio']
+        sharpe_ratio = strat.analyzers.sharperatio.get_analysis()['sharperatio'] or 0
         metrics_analyzer = strat.analyzers.getbyname('MetricsAnalyzer')
         metrics = metrics_analyzer.get_analysis()
         percentage_return = metrics['return']

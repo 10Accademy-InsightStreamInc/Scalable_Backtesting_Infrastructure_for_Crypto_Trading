@@ -54,3 +54,15 @@ class BacktestResult(Base):
     sharpe_ratio = Column(Float)
     created_at = Column(TIMESTAMP, server_default=text('CURRENT_TIMESTAMP'))
     scene = relationship('Scene', back_populates='backtests')
+
+class StockData(Base):
+    __tablename__ = "stock_data"
+    id = Column(Integer, primary_key=True, index=True)
+    date = Column(Date, index=True)
+    open = Column(Float)
+    high = Column(Float)
+    low = Column(Float)
+    close = Column(Float)
+    adj_close = Column(Float)
+    volume = Column(Float)
+    symbol = Column(String, index=True)

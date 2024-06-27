@@ -12,7 +12,7 @@ function Navbar() {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://127.0.0.1:8000/auth/users/me', {
+      const response = await fetch('http://127.0.0.1:8001/auth/users/me', {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -47,9 +47,15 @@ function Navbar() {
       <div className="flex-none">
         {currentPath === '/login' && <Link to="/signup" className="btn btn-outline">Sign Up</Link>}
         {currentPath === '/signup' && <Link to="/login" className="btn btn-outline">Login</Link>}
-        {currentPath === '/backtest' && <Link to="/profile" className="btn btn-outline ml-2">Profile</Link>}
-        {(currentPath === '/backtest' || currentPath === '/profile') && (
+        {(currentPath === '/backtest') && 
+        (<><Link to="/profile" className="btn btn-outline ml-2">Profile</Link> 
+        <Link to="/scenes" className="btn btn-outline ml-2">Scenes</Link>
+        <button onClick={handleLogout} className="btn btn-outline ml-2">Logout</button></>)}
+        {(currentPath === '/scenes') && (<>
+          <Link to="/backtest" className="btn btn-outline ml-2">Backtest</Link>
+          <Link to="/profile" className="btn btn-outline ml-2">Profile</Link>
           <button onClick={handleLogout} className="btn btn-outline ml-2">Logout</button>
+          </>
         )}
       </div>
     </div>

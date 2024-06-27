@@ -35,7 +35,7 @@ function Login() {
       formData.append('password', values.password);
 
       try {
-        const response = await fetch('http://127.0.0.1:8000/auth/token', {
+        const response = await fetch('http://127.0.0.1:8001/auth/token', {
           method: 'POST',
           body: formData,
         });

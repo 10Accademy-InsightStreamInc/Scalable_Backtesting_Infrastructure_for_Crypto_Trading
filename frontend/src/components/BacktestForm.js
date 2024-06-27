@@ -20,7 +20,7 @@ function BacktestForm() {
   useEffect(() => {
     const fetchIndicators = async () => {
       try {
-        const response = await fetch('http://127.0.0.1:8000/indicators/');
+        const response = await fetch('http://127.0.0.1:8001/indicators/');
         if (!response.ok) throw new Error('Error fetching indicators');
         const data = await response.json();
         setIndicators(data);
@@ -31,7 +31,7 @@ function BacktestForm() {
 
     const fetchStocks = async () => {
       try {
-        const response = await fetch('http://127.0.0.1:8000/stocks/');
+        const response = await fetch('http://127.0.0.1:8001/stocks/');
         if (!response.ok) throw new Error('Error fetching stocks');
         const data = await response.json();
         setStocks(data);

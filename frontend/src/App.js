@@ -4,6 +4,7 @@ import Navbar from './components/Navbar';
 import BacktestForm from './components/BacktestForm';
 import Signup from './components/Signup';
 import Login from './components/Login';
+import Profile from './components/Profile';
 
 const PrivateRoute = ({ element: Element, ...rest }) => {
   const token = localStorage.getItem('token');
@@ -21,6 +22,7 @@ function App() {
             <Route path="/signup" element={<Signup />} />
             <Route path="/login" element={<Login />} />
             <Route path="/backtest" element={<PrivateRoute element={BacktestForm} />} />
+            <Route path="/profile" element={<PrivateRoute element={Profile} />} />
           </Routes>
         </div>
       </div>

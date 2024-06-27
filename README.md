@@ -1,4 +1,14 @@
-# Scalable Crypto Backtesting Infrastructure
+# Scalable Stock and Crypto Backtesting Infrastructure
+
+## Table of Contents
+
+- [Installation](#installation)
+- [Usage](#usage)
+- [Project Structure](#project-structure)
+- [Endpoints](#endpoints)
+- [Kafka Integration](#kafka-integration)
+- [LSTM Integration](#lstm-integration)
+- [License](#license)
 
 ## Overview
 
@@ -56,7 +66,20 @@ pip install -r requirements.txt
 ```
 ## Project Structure
 ```bash
-├── data/
+├── backend/
+│   ├── main.py
+│   ├── models.py
+│   ├── schemas.py
+│   ├── database.py   
+│   ├── auth.py
+│   ├── requirements.txt
+│   ├── README.md
+│   └── scripts
+│       ├── backtesting
+│       ├── init_data.py
+│       ├── kafka_config.py
+│       │   ├── main.py
+│       └── init_db.py
 ├── scripts/
 │   └── download_data.py
 ├── tests/
@@ -66,13 +89,108 @@ pip install -r requirements.txt
 ├── requirements.txt
 └── README.md
 ```
+
+### Set Up Kafka
+
+If you do not have Kafka installed, you can run it using Docker:
+
+docker run -d --name zookeeper -p 2181:2181 zookeeper:3.4.9
+docker run -d --name kafka -p 9092:9092 --link zookeeper wurstmeister/kafka:latest
+
+Alternatively, follow the [Kafka Quickstart](https://kafka.apache.org/quickstart) guide to set up Kafka.
+
+### Configure Environment Variables
+
+Create a `.env` file in the root directory and add the following configurations:
+
+- KAFKA_BROKER_URL=localhost:9092
+- SCENE_TOPIC=scene_parameters
+- RESULT_TOPIC=backtest_results
+
+### Initialize the Database
+
+python -m scripts.init_db
+
+## Backend Usage
+
+### Run the FastAPI Application
+
+uvicorn main:app --reload
+
+### Sending Requests
+
+Use a tool like Postman, Thunder Client, or Curl to interact with the API.
+
+### Endpoints
+
+### Health Check
+
+**GET /health**
+
+### Create Indicator
+
+**POST /indicators/**
+
+```sh
+Body
+{
+  "name": "Simple Moving Average",
+  "symbol": "SMA",
+  "description": "A simple moving average indicator"
+}
+```
+
+### Read Indicators
+
+**GET /indicators/**
+
+### Create Stock
+
+**POST /stocks/**
+
+```sh
+Body
+{
+  "name": "Apple Inc.",
+  "symbol": "AAPL",
+  "description": "Apple Inc. stock"
+}
+```
+
+### Read Stocks
+
+**GET /stocks/**
+
+### Create Scene
+
+**POST /scenes/**
+
+```sh
+Body
+{
+  "period": 20,
+  "indicator_id": 1,
+  "stock_id": 1,
+  "start_date": "2023-01-01",
+  "end_date": "2023-12-31"
+}
+```
+
+### Read Scenes
+
+**GET /scenes/**
+
+### Perform Backtest
+
+**POST /backtests/{scene_id}**
+
+### Read Backtest Results
+
+**GET /backtest_results/**
+
 ## Contributors
 - Abubeker Shamil
-- Addisu Alemu
 - Michael George
-- Sheila Murugi
-
-
 
 ## License
 This project is licensed under the MIT License - see the LICENSE file for details.

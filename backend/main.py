@@ -147,24 +147,28 @@ def perform_backtest(scene_id: int, db: Session = Depends(get_db)):
     db_scene = db.query(models.Scene).filter(models.Scene.id == scene_id).first()
     if db_scene is None:
         raise HTTPException(status_code=404, detail="Scene not found")
-
-    # Fetch data based on the scene's date range
-    df = fetch_data(db_scene.start_date, db_scene.end_date)
     
-    # Perform backtest
-    metrics = run_backtest({
-        'period': db_scene.period,
-        'indicator_name': db_scene.indicator.name
-    }, df)
+    config = {
+        'initial_cash': 500,
+        'start_date': db_scene.start_date.strftime('%Y-%m-%d'),
+        'end_date': db_scene.end_date.strftime('%Y-%m-%d'),
+        'ticker': db_scene.stock.symbol,
+        'indicator': db_scene.indicator.symbol
+    }
+
+    logger.info(f"Config: {config}")
+
+    metrics = run_backtest(config=config)
+
+    logger.info(f"Metrics: {metrics}")
 
     # Save metrics to database
     backtest_results = []
-    for metric in metrics:
-        db_backtest_result = models.BacktestResult(scene_id=scene_id, **metric)
-        db.add(db_backtest_result)
-        db.commit()
-        db.refresh(db_backtest_result)
-        backtest_results.append(db_backtest_result)
+    db_backtest_result = models.BacktestResult(scene_id=scene_id, **metrics)
+    db.add(db_backtest_result)
+    db.commit()
+    db.refresh(db_backtest_result)
+    backtest_results.append(db_backtest_result)
 
     return backtest_results
 

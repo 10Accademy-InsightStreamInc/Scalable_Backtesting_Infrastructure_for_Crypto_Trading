@@ -8,76 +8,160 @@ if project_root not in sys.path:
 
 from scripts.backtesting.util.user_input import get_user_input
 from scripts.backtesting.analyzers.metrics_analyzer import MetricsAnalyzer
+import mlflow
+import mlflow.pyfunc
 
 def run_backtest(config):
-    initial_cash = config['initial_cash']
-    start_date = config['start_date']
-    end_date = config['end_date']
-    ticker = config['ticker']
-    indicator = config['indicator']
+    with mlflow.start_run():
+        initial_cash = config['initial_cash']
+        start_date = config['start_date']
+        end_date = config['end_date']
+        ticker = config['ticker']
+        indicator = config['indicator']
 
-    # Fetch historical data
-    try:
-        data = yf.download(ticker, start=start_date, end=end_date)
-        data_feed = bt.feeds.PandasData(dataname=data)
-    except Exception as e:
-        print(f"Error fetching data: {e}")
-        return
+        # Fetch historical data
+        try:
+            data = yf.download(ticker, start=start_date, end=end_date)
+            data_feed = bt.feeds.PandasData(dataname=data)
+        except Exception as e:
+            print(f"Error fetching data: {e}")
+            return
 
-    # Initialize Cerebro engine
-    cerebro = bt.Cerebro()
-    cerebro.adddata(data_feed)
-    cerebro.broker.setcash(initial_cash)
+        # Initialize Cerebro engine
+        cerebro = bt.Cerebro()
+        cerebro.adddata(data_feed)
+        cerebro.broker.setcash(initial_cash)
 
-    # Add strategy based on selected indicator
-    if indicator == 'SMA':
-        from scripts.backtesting.strategies.sma_strategy import SMAStrategy
-        cerebro.addstrategy(SMAStrategy)
-    elif indicator == 'LSTM':
-        from scripts.backtesting.strategies.lstm_strategy import LSTMStrategy
-        cerebro.addstrategy(LSTMStrategy)
-    elif indicator == 'MACD':
-        from scripts.backtesting.strategies.macd_strategy import MACDStrategy
-        cerebro.addstrategy(MACDStrategy)
-    elif indicator == 'RSI':
-        from scripts.backtesting.strategies.rsi_strategy import RSIStrategy
-        cerebro.addstrategy(RSIStrategy)
-    elif indicator == 'Bollinger Bands':
-        from scripts.backtesting.strategies.bollinger_bands_strategy import BollingerBandsStrategy
-        cerebro.addstrategy(BollingerBandsStrategy)
-    else:
-        print("Invalid indicator selected.")
-        return
+        # Add strategy based on selected indicator
+        if indicator == 'SMA':
+            from scripts.backtesting.strategies.sma_strategy import SMAStrategy
+            cerebro.addstrategy(SMAStrategy)
+        elif indicator == 'LSTM':
+            from scripts.backtesting.strategies.lstm_strategy import run_backtest_with_lstm
+            return run_backtest_with_lstm(df=data)
+        elif indicator == 'MACD':
+            from scripts.backtesting.strategies.macd_strategy import MACDStrategy
+            cerebro.addstrategy(MACDStrategy)
+        elif indicator == 'RSI':
+            from scripts.backtesting.strategies.rsi_strategy import RSIStrategy
+            cerebro.addstrategy(RSIStrategy)
+        elif indicator == 'BB':
+            from scripts.backtesting.strategies.bollinger_bands_strategy import BollingerBandsStrategy
+            cerebro.addstrategy(BollingerBandsStrategy)
+        else:
+            print("Invalid indicator selected.")
+            return
 
-    # Add analyzers
-    cerebro.addanalyzer(bt.analyzers.SharpeRatio, riskfreerate=0.0, _name='sharperatio')
-    cerebro.addanalyzer(MetricsAnalyzer, _name='MetricsAnalyzer')
+        # Add analyzers
+        cerebro.addanalyzer(bt.analyzers.SharpeRatio, riskfreerate=0.0, _name='sharperatio')
+        cerebro.addanalyzer(MetricsAnalyzer, _name='MetricsAnalyzer')
 
-    # Run backtest
-    results = cerebro.run()
-    strat = results[0]
+        # Run backtest
+        results = cerebro.run()
+        strat = results[0]
 
-    # Print results
-    print(f"Initial Cash: {initial_cash}")
-    print(f"Final Value: {cerebro.broker.getvalue()}")
-    print(f"Sharpe Ratio: {strat.analyzers.sharperatio.get_analysis()['sharperatio']}")
+        # Log results to MLflow
+        mlflow.log_param("initial_cash", initial_cash)
+        mlflow.log_param("start_date", start_date)
+        mlflow.log_param("end_date", end_date)
+        mlflow.log_param("ticker", ticker)
+        mlflow.log_param("indicator", indicator)
 
-    metrics_analyzer = strat.analyzers.getbyname('MetricsAnalyzer')
-    metrics = metrics_analyzer.get_analysis()
-    print(f"Return: {metrics['return']}")
-    print(f"Total Trades: {metrics['trades']}")
-    print(f"Winning Trades: {metrics['winning_trades']}")
-    print(f"Losing Trades: {metrics['losing_trades']}")
+        final_value = cerebro.broker.getvalue()
+        sharpe_ratio = strat.analyzers.sharperatio.get_analysis()['sharperatio']
+        metrics_analyzer = strat.analyzers.getbyname('MetricsAnalyzer')
+        metrics = metrics_analyzer.get_analysis()
+        percentage_return = metrics['return']
+        total_trades = metrics['trades']
+        winning_trades = metrics['winning_trades']
+        losing_trades = metrics['losing_trades']
 
-    return {
-        'initial_cash': initial_cash,
-        'final_value': cerebro.broker.getvalue(),
-        'sharpe_ratio': strat.analyzers.sharperatio.get_analysis()['sharperatio'],
-        'percentage_return': metrics['return'],
-        'total_trades': metrics['trades'],
-        'winning_trades': metrics['winning_trades'],
-        'losing_trades': metrics['losing_trades']
-    }
+        mlflow.log_metric("final_value", final_value)
+        mlflow.log_metric("sharpe_ratio", sharpe_ratio)
+        mlflow.log_metric("percentage_return", percentage_return)
+        mlflow.log_metric("total_trades", total_trades)
+        mlflow.log_metric("winning_trades", winning_trades)
+        mlflow.log_metric("losing_trades", losing_trades)
+
+        return {
+            'initial_cash': initial_cash,
+            'final_value': final_value,
+            'sharpe_ratio': sharpe_ratio,
+            'percentage_return': percentage_return,
+            'total_trades': total_trades,
+            'winning_trades': winning_trades,
+            'losing_trades': losing_trades
+        }
+
+# def run_backtest(config):
+#     initial_cash = config['initial_cash']
+#     start_date = config['start_date']
+#     end_date = config['end_date']
+#     ticker = config['ticker']
+#     indicator = config['indicator']
+
+#     # Fetch historical data
+#     try:
+#         data = yf.download(ticker, start=start_date, end=end_date)
+#         data_feed = bt.feeds.PandasData(dataname=data)
+#     except Exception as e:
+#         print(f"Error fetching data: {e}")
+#         return
+
+#     # Initialize Cerebro engine
+#     cerebro = bt.Cerebro()
+#     cerebro.adddata(data_feed)
+#     cerebro.broker.setcash(initial_cash)
+
+#     # Add strategy based on selected indicator
+#     if indicator == 'SMA':
+#         from scripts.backtesting.strategies.sma_strategy import SMAStrategy
+#         cerebro.addstrategy(SMAStrategy)
+#     elif indicator == 'LSTM':
+#         from scripts.backtesting.strategies.lstm_strategy import LSTMStrategy
+#         cerebro.addstrategy(LSTMStrategy)
+#     elif indicator == 'MACD':
+#         from scripts.backtesting.strategies.macd_strategy import MACDStrategy
+#         cerebro.addstrategy(MACDStrategy)
+#     elif indicator == 'RSI':
+#         from scripts.backtesting.strategies.rsi_strategy import RSIStrategy
+#         cerebro.addstrategy(RSIStrategy)
+#     elif indicator == 'BB':
+#         from scripts.backtesting.strategies.bollinger_bands_strategy import BollingerBandsStrategy
+#         cerebro.addstrategy(BollingerBandsStrategy)
+#     else:
+#         print("Invalid indicator selected.")
+#         return
+
+#     # Add analyzers
+#     cerebro.addanalyzer(bt.analyzers.SharpeRatio, riskfreerate=0.0, _name='sharperatio')
+#     cerebro.addanalyzer(MetricsAnalyzer, _name='MetricsAnalyzer')
+
+#     # Run backtest
+#     results = cerebro.run()
+#     strat = results[0]
+
+#     # Print results
+#     print(f"Initial Cash: {initial_cash}")
+#     print(f"Final Value: {cerebro.broker.getvalue()}")
+#     print(f"Sharpe Ratio: {strat.analyzers.sharperatio.get_analysis()['sharperatio']}")
+
+#     metrics_analyzer = strat.analyzers.getbyname('MetricsAnalyzer')
+#     metrics = metrics_analyzer.get_analysis()
+#     print(f"Return: {metrics['return']}")
+#     print(f"Total Trades: {metrics['trades']}")
+#     print(f"Winning Trades: {metrics['winning_trades']}")
+#     print(f"Losing Trades: {metrics['losing_trades']}")
+
+#     return {
+#         'initial_cash': initial_cash,
+#         'final_value': cerebro.broker.getvalue(),
+#         'sharpe_ratio': strat.analyzers.sharperatio.get_analysis()['sharperatio'],
+#         'percentage_return': metrics['return'],
+#         'total_trades': metrics['trades'],
+#         'winning_trades': metrics['winning_trades'],
+#         'losing_trades': metrics['losing_trades']
+#     }
 
 if __name__ == "__main__":
     # initial_cash, start_date, end_date, ticker, indicator = get_user_input()

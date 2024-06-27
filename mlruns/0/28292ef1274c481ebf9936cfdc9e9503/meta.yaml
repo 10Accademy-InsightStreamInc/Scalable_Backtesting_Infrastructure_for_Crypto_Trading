@@ -1,0 +1,15 @@
+artifact_uri: mlflow-artifacts:/0/28292ef1274c481ebf9936cfdc9e9503/artifacts
+end_time: 1719455895265
+entry_point_name: ''
+experiment_id: '0'
+lifecycle_stage: active
+run_id: 28292ef1274c481ebf9936cfdc9e9503
+run_name: righteous-duck-384
+run_uuid: 28292ef1274c481ebf9936cfdc9e9503
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1719455893781
+status: 4
+tags: []
+user_id: user

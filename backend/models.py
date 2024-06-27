@@ -47,6 +47,7 @@ class BacktestResult(Base):
     initial_cash = Column(Float, nullable=False)
     final_value = Column(Float, nullable=False)
     percentage_return = Column(Float)
+    max_drawdown = Column(Float)
     total_trades = Column(Integer)
     winning_trades = Column(Integer)
     losing_trades = Column(Integer)

@@ -14,22 +14,30 @@ function BacktestForm() {
   const [stocks, setStocks] = useState([]);
   const [stockDescription, setStockDescription] = useState('');
   const [indicatorDescription, setIndicatorDescription] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    // Simulate fetching indicators and stocks from an API
     const fetchIndicators = async () => {
-      const response = await fetch('http://127.0.0.1:8000/indicators/');
-      const data = await response.json();
-      console.log("The Response on Indicators is :: ",data);
-
-      setIndicators(data);
+      try {
+        const response = await fetch('http://127.0.0.1:8000/indicators/');
+        if (!response.ok) throw new Error('Error fetching indicators');
+        const data = await response.json();
+        setIndicators(data);
+      } catch (err) {
+        setError(err.message);
+      }
     };
 
     const fetchStocks = async () => {
-      const response = await fetch('http://127.0.0.1:8000/stocks/');
-      const data = await response.json();
-      console.log("The Response on Stocks is :: ",data);
-      setStocks(data);
+      try {
+        const response = await fetch('http://127.0.0.1:8000/stocks/');
+        if (!response.ok) throw new Error('Error fetching stocks');
+        const data = await response.json();
+        setStocks(data);
+      } catch (err) {
+        setError(err.message);
+      }
     };
 
     fetchIndicators();
@@ -42,12 +50,8 @@ function BacktestForm() {
       [e.target.name]: e.target.value,
     });
 
-    console.log("The changed s ::",e.target.name, "The Val =" ,e.target.value);
-
     if (e.target.name === 'stock') {
-      console.log("It is here")
       const selectedStock = stocks.find(stock => stock.id === parseInt(e.target.value));
-      console.log("Selected Stock :: ",selectedStock)
       setStockDescription(selectedStock ? selectedStock.description : '');
     }
 
@@ -59,54 +63,48 @@ function BacktestForm() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log(parameters);
-    let a = {
+    setLoading(true);
+    setError(null);
+
+    let payload = {
       "period": 15,
       "start_date": parameters["startDate"],
       "end_date": parameters['endDate'],
-      "indicator_id": parameters["indicator"], // 
-      "stock_id": parameters["stock"] // Nvidia
-   }
-   console.log("The final to be sent to API is :: ", a)
-    // API POST call to backend
-    const response = await fetch('http://127.0.0.1:8000/scenes/', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(a),
-    });
-    // const response = await fetch('https://localhost'); 
-    // const response = {
-    //   "return": "10%",
-    //   "numberOfTrades": 50,
-    //   "winningTrades": 30,
-    //   "losingTrades": 20,
-    //   "maxDrawdown": "5%",
-    //   "sharpeRatio": 1.5
-    // };
-    const scene = await response.json()
-    console.log("The Response of backtest is :: ",scene);
+      "indicator_id": parameters["indicator"],
+      "stock_id": parameters["stock"]
+    };
 
-    const scene_id = scene.id;
-    console.log("The Scene ID is :: ",scene_id);
+    try {
+      const response = await fetch('http://127.0.0.1:8000/scenes/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
 
-    // const response2 = await fetch('http://127.0.0.1:8000//backtests/'+scene_id+'/');
-    const response2 = await fetch('http://127.0.0.1:8000/backtests/'+scene_id+'/', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(""),
-    });
+      if (!response.ok) throw new Error('Error creating scene');
 
-    const data2 = await response2.json();
+      const scene = await response.json();
+      const scene_id = scene.id;
 
-    console.log("The Response of backtest is :: ",data2);
-    
-    // const data = await response.json();
-    // const data = response;
-    setResults(data2[0]);
+      const response2 = await fetch(`http://127.0.0.1:8000/backtests/${scene_id}/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(""),
+      });
+
+      if (!response2.ok) throw new Error('Error running backtest');
+
+      const data2 = await response2.json();
+      setResults(data2[0]);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -125,7 +123,7 @@ function BacktestForm() {
                 value={parameters.paramsRange}
                 onChange={handleChange}
                 className="input input-bordered"
-                placeholder="e.g., 1000, 2000,10,000"
+                placeholder="e.g., 1000, 2000, 10,000"
                 required
               />
             </div>
@@ -202,11 +200,19 @@ function BacktestForm() {
           </div>
 
           <div className="form-control mt-4">
-            <button type="submit" className="btn btn-primary bg-neutral-600" style={{ color: 'white' }}>Run Backtest</button>
+            <button type="submit" className="btn btn-primary bg-neutral-600" style={{ color: 'white' }} disabled={loading}>
+              {loading ? 'Running Backtest...' : 'Run Backtest'}
+            </button>
           </div>
         </form>
 
-        {results && (
+        {error && (
+          <div className="alert alert-error mt-4">
+            <span>{error}</span>
+          </div>
+        )}
+
+        {results && !loading && (
           <div className="mt-6 grid grid-cols-2 gap-4">
             <div className="card p-4 bg-gray-100 rounded-lg shadow-md">
               <h3 className="text-lg font-bold">Start / End Portfolio</h3>

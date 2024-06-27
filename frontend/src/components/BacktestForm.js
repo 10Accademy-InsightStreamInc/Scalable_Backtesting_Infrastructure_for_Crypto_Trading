@@ -109,6 +109,7 @@ function BacktestForm() {
 
   return (
     <div className="card bg-base-100 shadow-xl">
+      <h1 className="card-title justify-center">Scalable Stock and Crypto Backtesting Infrastructure</h1>
       <div className="card-body">
         <h2 className="card-title">Backtest Parameters</h2>
         <form onSubmit={handleSubmit}>

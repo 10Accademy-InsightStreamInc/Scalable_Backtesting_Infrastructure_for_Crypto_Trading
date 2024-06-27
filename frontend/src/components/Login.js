@@ -45,7 +45,8 @@ function Login() {
         }
 
         const data = await response.json();
-        localStorage.setItem('token', data.token);
+        console.log("The data from login :: ", data)
+        localStorage.setItem('token', data.access_token);
         navigate('/backtest');
       } catch (err) {
         setError(err.message);

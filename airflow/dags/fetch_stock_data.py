@@ -1,10 +1,18 @@
 from airflow import DAG
 from airflow.operators.python_operator import PythonOperator
+
 from datetime import datetime, timedelta
 import yfinance as yf
 import pandas as pd
-# import psycopg2
+import os
+
+# from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
+
+DATABASE_URL = os.getenv("PYCOPG_DATABASE_URL", "postgresql+psycopg2://trading_db_av2v_user:210M6MA9QKEEgVdiasnUdMQDBNN417oy@dpg-cpqojbqj1k6c73bkqq3g-a.oregon-postgres.render.com/trading_db_av2v")    
+engine = create_engine(DATABASE_URL)
+# Session = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+# db = Session()
 
 default_args = {
     'owner': 'airflow',
@@ -16,7 +24,7 @@ default_args = {
     'retry_delay': timedelta(minutes=5),
 }
 
-# Create a single DAG
+# Create a DAG
 dag = DAG(
     'fetch_stock_data_and_monitoring',
     default_args=default_args,
@@ -25,20 +33,12 @@ dag = DAG(
 )
 
 def check_data_quality():
-    import os
-    DATABASE_URL = os.getenv("PYCOPG_DATABASE_URL", "postgresql+psycopg2://trading_db_av2v_user:210M6MA9QKEEgVdiasnUdMQDBNN417oy@dpg-cpqojbqj1k6c73bkqq3g-a.oregon-postgres.render.com/trading_db_av2v")
-    engine = create_engine(DATABASE_URL)
     data = pd.read_sql('SELECT * FROM stock_data', con=engine)
     if data.isnull().values.any():
         raise ValueError("Data quality check failed: Found missing values")
     print("Data quality check passed")
     
 def fetch_and_store_stock_data():
-    import os
-    # Connect to PostgreSQL
-    DATABASE_URL = os.getenv("PYCOPG_DATABASE_URL", "postgresql+psycopg2://trading_db_av2v_user:210M6MA9QKEEgVdiasnUdMQDBNN417oy@dpg-cpqojbqj1k6c73bkqq3g-a.oregon-postgres.render.com/trading_db_av2v")
-    engine = create_engine(DATABASE_URL)
-    
     # Fetch stocks from database
     stocks_df = pd.read_sql("SELECT * FROM stocks", engine)
 
@@ -46,8 +46,11 @@ def fetch_and_store_stock_data():
     for index, row in stocks_df.iterrows():
         ticker = row['symbol']
         try:
-            data = yf.download(ticker, start='2023-01-01', end=datetime.today().strftime('%Y-%m-%d'))
+            data: pd.DataFrame = yf.download(ticker, start='2023-01-01', end=datetime.today().strftime('%Y-%m-%d'))
             data['symbol'] = ticker
+            data.reset_index(inplace=True)
+            data.index.name = 'id'
+            data.rename(columns={'Date': 'date', 'Open': 'open', 'High': 'high', 'Low': 'low', 'Close': 'close', 'Adj Close': 'adj_close', 'Volume': 'volume'}, inplace=True)
             data.to_sql('stock_data', engine, if_exists='append')
         except Exception as e:
             print(f"Error fetching data for {ticker}: {e}")

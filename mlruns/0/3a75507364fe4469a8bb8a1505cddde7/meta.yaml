@@ -1,0 +1,15 @@
+artifact_uri: mlflow-artifacts:/0/3a75507364fe4469a8bb8a1505cddde7/artifacts
+end_time: 1719456090915
+entry_point_name: ''
+experiment_id: '0'
+lifecycle_stage: active
+run_id: 3a75507364fe4469a8bb8a1505cddde7
+run_name: luxuriant-duck-250
+run_uuid: 3a75507364fe4469a8bb8a1505cddde7
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1719456089526
+status: 4
+tags: []
+user_id: user

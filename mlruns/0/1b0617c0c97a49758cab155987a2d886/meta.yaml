@@ -1,0 +1,15 @@
+artifact_uri: mlflow-artifacts:/0/1b0617c0c97a49758cab155987a2d886/artifacts
+end_time: 1719470299248
+entry_point_name: ''
+experiment_id: '0'
+lifecycle_stage: active
+run_id: 1b0617c0c97a49758cab155987a2d886
+run_name: rumbling-rat-300
+run_uuid: 1b0617c0c97a49758cab155987a2d886
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1719470294733
+status: 3
+tags: []
+user_id: user

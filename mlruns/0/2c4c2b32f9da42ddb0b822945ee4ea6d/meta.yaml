@@ -1,0 +1,15 @@
+artifact_uri: mlflow-artifacts:/0/2c4c2b32f9da42ddb0b822945ee4ea6d/artifacts
+end_time: null
+entry_point_name: ''
+experiment_id: '0'
+lifecycle_stage: active
+run_id: 2c4c2b32f9da42ddb0b822945ee4ea6d
+run_name: treasured-asp-159
+run_uuid: 2c4c2b32f9da42ddb0b822945ee4ea6d
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1719455652770
+status: 1
+tags: []
+user_id: user

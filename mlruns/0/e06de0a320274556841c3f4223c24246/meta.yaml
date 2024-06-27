@@ -1,0 +1,15 @@
+artifact_uri: mlflow-artifacts:/0/e06de0a320274556841c3f4223c24246/artifacts
+end_time: 1719469444925
+entry_point_name: ''
+experiment_id: '0'
+lifecycle_stage: active
+run_id: e06de0a320274556841c3f4223c24246
+run_name: gaudy-fox-720
+run_uuid: e06de0a320274556841c3f4223c24246
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1719469442387
+status: 4
+tags: []
+user_id: user

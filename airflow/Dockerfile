@@ -18,4 +18,9 @@ USER airflow
 
 # Copy requirements and install Python packages
 COPY requirements.txt .
+
+COPY ../backend ./backend
+
+COPY ../scripts/backtesting ./scripts/backtesting
+
 RUN pip install --no-cache-dir -r requirements.txt

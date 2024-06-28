@@ -59,7 +59,6 @@ class SceneBase(BaseModel):
     period: int
     start_date: date
     end_date: date
-    indicator_id: int
     stock_id: int
 
 class SceneCreate(SceneBase):
@@ -68,7 +67,6 @@ class SceneCreate(SceneBase):
 class Scene(SceneBase):
     id: int
     backtests: List['BacktestResult'] = []
-    indicator: Indicator
     stock: Stock
 
     class Config:
@@ -76,20 +74,36 @@ class Scene(SceneBase):
 
 class BacktestResultBase(BaseModel):
     scene_id: int
-    gross_profit: float
-    net_profit: float
-    number_of_trades: int
-    winning_trades: Optional[int] = None
-    losing_trades: Optional[int] = None
-    max_drawdown: Optional[float] = None
+    initial_cash: float
+    final_value: float
+    indicator_id: int
+    percentage_return: float
+    total_trades: int
+    winning_trades: int
+    losing_trades: int
     sharpe_ratio: Optional[float] = None
+    max_drawdown: Optional[float] = None
 
 class BacktestResultCreate(BacktestResultBase):
     pass
 
 class BacktestResult(BacktestResultBase):
     id: int
+    indicator: Indicator
     created_at: datetime
+
+    class Config:
+        orm_mode = True
+
+class StockData(BaseModel):
+    date: datetime
+    symbol: str
+    open: float
+    high: float
+    low: float
+    close: float
+    adj_close: float
+    volume: float
 
     class Config:
         orm_mode = True

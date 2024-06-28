@@ -1,0 +1,17 @@
+pandas
+numpy
+matplotlib
+scikit-learn
+backtrader
+yfinance
+# fastapi 
+# uvicorn 
+psycopg2-binary
+sqlalchemy
+# mlflow
+# passlib
+# python-jose
+kafka-python
+# tensorflow
+apache-airflow
+h5py

@@ -12,3 +12,5 @@ mlflow
 passlib
 python-jose
 kafka-python
+tensorflow
+apache-airflow

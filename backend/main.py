@@ -1,15 +1,21 @@
 from typing import List
 from fastapi import FastAPI, Depends, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy.exc import IntegrityError
 import pandas as pd
 import threading
+import logging
+import time
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 from . import models, schemas, database
 from .auth import router as auth_router
 from kafka_topic.kafka_config import get_kafka_producer, SCENE_TOPIC, RESULT_TOPIC, get_kafka_consumer
 
-from backend.utils.backtest import run_backtest
+from scripts.backtesting.main import run_backtest
 from backend.utils.init_data import initialize_data
 
 get_db = database.get_db
@@ -21,14 +27,27 @@ models.Base.metadata.create_all(bind=database.engine)
 
 app = FastAPI()
 
+# allow all origins
+origins = ["*"]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 @app.on_event("startup") # TODO update the code with lifespan dependency
 def start_kafka_consumer():
     threading.Thread(target=consume_scene_parameters).start()
+    print("Kafka consumer started")
 
 @app.on_event("startup") # TODO update the code with lifespan dependency
 def on_startup():
     db = next(get_db())
     initialize_data(db)
+    print("Data initialized")
 
 app.include_router(auth_router, prefix="/auth", tags=["auth"])
 
@@ -73,17 +92,19 @@ def create_scene(scene: schemas.SceneCreate, db: Session = Depends(get_db)):
 
         # Send scene parameters to Kafka
         scene_parameters = {
+            'scene_id': db_scene.id,
             'period': db_scene.period,
-            'indicator_name': db_scene.indicator.name,
-            'indicator_symbol': db_scene.indicator.symbol,
+            'initial_cash': 500,\
             'stock_name': db_scene.stock.name,
-            'stock_symbol': db_scene.stock.symbol,
+            'ticker': db_scene.stock.symbol,
             'start_date': db_scene.start_date.strftime('%Y-%m-%d'),
             'end_date': db_scene.end_date.strftime('%Y-%m-%d')
         }
         print("Sending scene parameters to Kafka:", scene_parameters)
         producer.send(SCENE_TOPIC, scene_parameters)
+        print("Scene parameters sent to Kafka")
         producer.flush()
+        print("Scene flushed successfully:")
 
         return db_scene
     except IntegrityError:
@@ -91,7 +112,7 @@ def create_scene(scene: schemas.SceneCreate, db: Session = Depends(get_db)):
         existing_scene = db.query(models.Scene).filter(
             models.Scene.start_date == scene.start_date,
             models.Scene.end_date == scene.end_date,
-            models.Scene.indicator_id == scene.indicator_id
+            models.Scene.stock_id == scene.stock_id
         ).first()
         return existing_scene
 
@@ -106,7 +127,7 @@ def delete_scene(scene_id: int, db: Session = Depends(get_db)):
 
 @app.get('/scenes/{scene_id}', response_model=schemas.Scene)
 def read_scene(scene_id: int, db: Session = Depends(get_db)):
-    db_scene = db.query(models.Scene).options(joinedload(models.Scene.indicator), joinedload(models.Scene.stock)).filter(models.Scene.id == scene_id).first()
+    db_scene = db.query(models.Scene).options(joinedload(models.Scene.stock)).filter(models.Scene.id == scene_id).first()
     if db_scene is None:
         raise HTTPException(status_code=404, detail="Scene not found")
     return db_scene
@@ -114,33 +135,71 @@ def read_scene(scene_id: int, db: Session = Depends(get_db)):
 @app.get('/scenes/', response_model=List[schemas.Scene])
 def read_scenes(skip: int = 0, limit: int = 10, db: Session = Depends(get_db)):
     scenes = db.query(models.Scene).offset(skip).limit(limit).all()
+    for scene in scenes:
+        for backtest in scene.backtests:
+            logger.info(f"Backtest Result: {backtest.__dict__}")
     return scenes
 
-@app.post('/backtests/{scene_id}', response_model=List[schemas.BacktestResult])
-def perform_backtest(scene_id: int, db: Session = Depends(get_db)):
+@app.get('/best_indicator/{scene_id}', response_model=schemas.BacktestResult)
+def get_best_indicator(scene_id: int, db: Session = Depends(get_db)):
+    db_scene = db.query(models.Scene).options(joinedload(models.Scene.backtests).joinedload(models.BacktestResult.indicator)).filter(models.Scene.id == scene_id).first()
+    if db_scene is None:
+        raise HTTPException(status_code=404, detail="Scene not found")
+    
+    best_backtest = select_best_indicator([backtest.__dict__ for backtest in db_scene.backtests])
+    
+    if best_backtest is None:
+        raise HTTPException(status_code=404, detail="No backtests found for the scene")
+    
+    return best_backtest
+
+@app.post('/backtests/{scene_id}/{indicator_id}', response_model=List[schemas.BacktestResult])
+def perform_backtest(scene_id: int, indicator_id: int, db: Session = Depends(get_db)):
     db_scene = db.query(models.Scene).filter(models.Scene.id == scene_id).first()
     if db_scene is None:
         raise HTTPException(status_code=404, detail="Scene not found")
-
-    # Fetch data based on the scene's date range
-    df = fetch_data(db_scene.start_date, db_scene.end_date)
     
-    # Perform backtest
-    metrics = run_backtest({
-        'period': db_scene.period,
-        'indicator_name': db_scene.indicator.name
-    }, df)
+    print("The Db Scene: ", db_scene.__dict__)
+    db_indicator = db.query(models.Indicator).filter(models.Indicator.id == indicator_id).first()
+    config = {
+        'initial_cash': 500,
+        'start_date': db_scene.start_date.strftime('%Y-%m-%d'),
+        'end_date': db_scene.end_date.strftime('%Y-%m-%d'),
+        'ticker': db_scene.stock.symbol,
+        'indicator': db_indicator.symbol
+    }
+
+    logger.info(f"Config: {config}")
+
+    metrics = run_backtest(config=config)
+
+    logger.info(f"Metrics: {metrics}")
 
     # Save metrics to database
     backtest_results = []
-    for metric in metrics:
-        db_backtest_result = models.BacktestResult(scene_id=scene_id, **metric)
-        db.add(db_backtest_result)
-        db.commit()
-        db.refresh(db_backtest_result)
-        backtest_results.append(db_backtest_result)
+    db_backtest_result = models.BacktestResult(scene_id=scene_id, **metrics, indicator_id=indicator_id)
+    db.add(db_backtest_result)
+    db.commit()
+    db.refresh(db_backtest_result)
+    backtest_results.append(db_backtest_result)
 
     return backtest_results
+
+@app.get("/stock_data/", response_model=List[schemas.StockData])
+def read_stock_data(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+    stock_data = db.query(models.StockData).offset(skip).limit(limit).all()
+    return stock_data
+
+@app.get("/stock_data/{symbol}", response_model=List[schemas.StockData])
+def read_stock_data(symbol: str, db: Session = Depends(get_db)):
+    stock_data = db.query(models.StockData).filter(models.StockData.symbol == symbol).limit(100).all()
+    return stock_data
+
+#gets stock data from db from start_date to end_date
+@app.get("/stock_data/{symbol}/{from_date}/{to_date}/", response_model=List[schemas.StockData])
+def read_stock_data(symbol: str, from_date: str, to_date: str, db: Session = Depends(get_db)):
+    stock_data = db.query(models.StockData).filter(models.StockData.symbol == symbol, models.StockData.date >= from_date, models.StockData.date <= to_date).all()
+    return stock_data
 
 @app.get('/run_backtest/', response_model=List[schemas.BacktestResult])
 def run_backtests(scene: schemas.SceneCreate, db: Session = Depends(get_db)):
@@ -175,18 +234,59 @@ def fetch_existing_backtest(scene_parameters):
     return None
 
 def consume_scene_parameters():
+    db = next(get_db())
     consumer = get_kafka_consumer(SCENE_TOPIC)
-    for message in consumer:
-        scene_parameters = message.value
-        print(f"Received scene parameters: {scene_parameters}")
-        existing_results = fetch_existing_backtest(scene_parameters)
-        if existing_results:
-            print(f"Using existing backtest results for parameters: {scene_parameters}")
-            continue
-        # Run the backtest if no existing results
-        df = fetch_data(scene_parameters['start_date'], scene_parameters['end_date'])
-        metrics = run_backtest(scene_parameters, df)
-        producer = get_kafka_producer()
-        print(f"Sending backtest results: {metrics}")
-        producer.send(RESULT_TOPIC, metrics)
-        producer.flush()
+    producer = get_kafka_producer()
+    while True:
+        try:
+            for message in consumer:
+                scene_parameters = message.value
+                logger.info(f"Received scene parameters: {scene_parameters}")
+                existing_results = fetch_existing_backtest(scene_parameters)
+                if existing_results:
+                    logger.info(f"Using existing backtest results for parameters: {scene_parameters}")
+                    continue
+                # Run the backtest if no existing results
+                # df = fetch_data(scene_parameters['start_date'], scene_parameters['end_date'])
+                metrics = run_backtest(scene_parameters)
+                logger.info(f"Sending backtest results: {metrics}")
+                # Attach backtest results to scene
+                scene_id = scene_parameters['scene_id']
+                    
+                db_backtest_result = models.BacktestResult(scene_id=scene_id, **metrics)
+                db.add(db_backtest_result)
+                db.commit()
+                db.refresh(db_backtest_result)
+
+                producer.send(RESULT_TOPIC, metrics)
+                producer.flush()
+                logger.info("Backtest results sent to Kafka")
+        except Exception as e:
+            logger.error(f"Error in consumer loop: {e}")
+            time.sleep(5)  # Sleep for a while before retrying
+
+def normalize(value, min_value, max_value):
+    return (value - min_value) / (max_value - min_value)
+
+def calculate_score(backtest):
+    # Normalize metrics (assuming higher return and Sharpe ratio are better, lower max drawdown is better)
+    normalized_return = normalize(backtest['percentage_return'], -1, 1)
+    # normalized_max_drawdown = normalize(-backtest['max_drawdown'], -1, 0)  # Negate since lower is better
+    normalized_sharpe_ratio = normalize(backtest['sharpe_ratio'], 0, 3)
+    
+    score = (normalized_return * 0.4)  + (normalized_sharpe_ratio * 0.3)
+    # Combine normalized metrics into a single score (weights can be adjusted)
+    # score = (normalized_return * 0.4) + (normalized_max_drawdown * 0.3) + (normalized_sharpe_ratio * 0.3)
+    return score
+
+def select_best_indicator(backtests):
+    best_backtest = None
+    best_score = float('-inf')
+
+    for backtest in backtests:
+        score = calculate_score(backtest)
+        if score > best_score:
+            best_score = score
+            best_backtest = backtest
+
+    return best_backtest

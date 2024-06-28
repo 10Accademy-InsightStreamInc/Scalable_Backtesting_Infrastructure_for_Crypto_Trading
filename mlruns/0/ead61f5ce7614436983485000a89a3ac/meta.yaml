@@ -1,0 +1,15 @@
+artifact_uri: mlflow-artifacts:/0/ead61f5ce7614436983485000a89a3ac/artifacts
+end_time: 1719456665027
+entry_point_name: ''
+experiment_id: '0'
+lifecycle_stage: active
+run_id: ead61f5ce7614436983485000a89a3ac
+run_name: powerful-robin-937
+run_uuid: ead61f5ce7614436983485000a89a3ac
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1719456663435
+status: 4
+tags: []
+user_id: user

@@ -15,3 +15,10 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+html {
+  -webkit-text-size-adjust: 100%; /* Chrome, Safari, newer versions of Opera */
+  -ms-text-size-adjust: 100%;     /* Internet Explorer */
+  text-size-adjust: 100%;         /* Standard syntax */
+}
+

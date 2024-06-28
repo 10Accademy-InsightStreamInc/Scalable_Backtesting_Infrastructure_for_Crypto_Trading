@@ -29,7 +29,7 @@ function Login() {
     onSubmit: async (values) => {
       setLoading(true);
       setError(null);
-
+      console.log("The data from login :: ", values)
       const formData = new FormData();
       formData.append('username', values.username);
       formData.append('password', values.password);
@@ -37,6 +37,10 @@ function Login() {
       try {
         const response = await fetch('http://127.0.0.1:8001/auth/token', {
           method: 'POST',
+          headers: {
+            // x-content-type-options'
+            'X-Content-Type-Options': 'nosniff',
+          },
           body: formData,
         });
 
@@ -62,7 +66,7 @@ function Login() {
         <h2 className="card-title">Login</h2>
         <form onSubmit={formik.handleSubmit}>
           <div className="form-control">
-            <label className="label">
+            <label className="label" for="username">
               <span className="label-text">Username</span>
             </label>
             <input
@@ -79,7 +83,7 @@ function Login() {
             ) : null}
           </div>
           <div className="form-control">
-            <label className="label">
+            <label className="label" for="password">
               <span className="label-text">Password</span>
             </label>
             <input

@@ -75,7 +75,7 @@ function BacktestForm() {
     };
 
     try {
-      const response = await fetch('http://127.0.0.1:8000/scenes/', {
+      const response = await fetch('http://127.0.0.1:8001/scenes/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -88,7 +88,7 @@ function BacktestForm() {
       const scene = await response.json();
       const scene_id = scene.id;
 
-      const response2 = await fetch(`http://127.0.0.1:8000/backtests/${scene_id}/`, {
+      const response2 = await fetch(`http://127.0.0.1:8001/backtests/${scene_id}/${parameters["indicator"]}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

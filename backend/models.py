@@ -32,18 +32,15 @@ class Scene(Base):
     start_date = Column(Date, nullable=False)
     end_date = Column(Date, nullable=False)
     stock_id = Column(Integer, ForeignKey('stocks.id'))
-    indicator_id = Column(Integer, ForeignKey('indicators.id'))
     backtests = relationship('BacktestResult', back_populates='scene')
     stock = relationship('Stock')
-    indicator = relationship('Indicator')
 
-    __table_args__ = (UniqueConstraint('start_date', 'end_date', 'indicator_id', 'stock_id', name='_scene_uc'),)
+    __table_args__ = (UniqueConstraint('start_date', 'end_date', 'stock_id', name='_scene_uc'),)
 
 class BacktestResult(Base):
     __tablename__ = 'backtest_results'
     # __table_args__ = (UniqueConstraint('scene_id', 'indicator_id', 'stock_id', name='_backtest_uc'),)
     id = Column(Integer, primary_key=True, index=True)
-    scene_id = Column(Integer, ForeignKey('scenes.id'))
     initial_cash = Column(Float, nullable=False)
     final_value = Column(Float, nullable=False)
     percentage_return = Column(Float)
@@ -53,7 +50,10 @@ class BacktestResult(Base):
     losing_trades = Column(Integer)
     sharpe_ratio = Column(Float)
     created_at = Column(TIMESTAMP, server_default=text('CURRENT_TIMESTAMP'))
+    scene_id = Column(Integer, ForeignKey('scenes.id'))
+    indicator_id = Column(Integer, ForeignKey('indicators.id'))
     scene = relationship('Scene', back_populates='backtests')
+    indicator = relationship('Indicator')
 
 class StockData(Base):
     __tablename__ = "stock_data"

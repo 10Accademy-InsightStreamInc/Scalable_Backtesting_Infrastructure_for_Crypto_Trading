@@ -46,12 +46,25 @@ def fetch_and_store_stock_data():
     for index, row in stocks_df.iterrows():
         ticker = row['symbol']
         try:
+            print(f"Fetching data for {ticker}")
             data: pd.DataFrame = yf.download(ticker, start='2023-01-01', end=datetime.today().strftime('%Y-%m-%d'))
-            data['symbol'] = ticker
-            data.reset_index(inplace=True)
-            data.index.name = 'id'
-            data.rename(columns={'Date': 'date', 'Open': 'open', 'High': 'high', 'Low': 'low', 'Close': 'close', 'Adj Close': 'adj_close', 'Volume': 'volume'}, inplace=True)
-            data.to_sql('stock_data', engine, if_exists='append')
+            if not data.empty:
+                data['symbol'] = ticker
+                data.reset_index(inplace=True)
+                data.rename(columns={
+                    'Date': 'date', 
+                    'Open': 'open', 
+                    'High': 'high', 
+                    'Low': 'low', 
+                    'Close': 'close', 
+                    'Adj Close': 'adj_close', 
+                    'Volume': 'volume'
+                }, inplace=True)
+                # Ensure we don't overwrite by specifying the index as False
+                data.to_sql('stock_data', engine, if_exists='append', index=False)
+                print(f"Successfully stored data for {ticker}")
+            else:
+                print(f"No data found for {ticker}")
         except Exception as e:
             print(f"Error fetching data for {ticker}: {e}")
 

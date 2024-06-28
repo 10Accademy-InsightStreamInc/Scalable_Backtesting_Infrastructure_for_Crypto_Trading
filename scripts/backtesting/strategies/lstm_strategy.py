@@ -2,11 +2,21 @@ from tensorflow.keras.models import load_model
 import joblib
 import numpy as np
 import os, sys
+import tensorflow as tf
+
+# Set TensorFlow to limit GPU memory growth (if applicable)
+gpus = tf.config.experimental.list_physical_devices('GPU')
+if gpus:
+    try:
+        for gpu in gpus:
+            tf.config.experimental.set_memory_growth(gpu, True)
+    except RuntimeError as e:
+        print(e)
 
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../'))
 if project_root not in sys.path:
     sys.path.append(project_root)
-    
+
 def load_lstm_model_and_scaler(model_path='my_model.keras', scaler_path='scaler.gz'):
     model = load_model(model_path)
     scaler = joblib.load(scaler_path)

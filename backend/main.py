@@ -94,9 +94,7 @@ def create_scene(scene: schemas.SceneCreate, db: Session = Depends(get_db)):
         scene_parameters = {
             'scene_id': db_scene.id,
             'period': db_scene.period,
-            'initial_cash': 500,
-            'indicator_name': db_scene.indicator.name,
-            'indicator': db_scene.indicator.symbol,
+            'initial_cash': 500,\
             'stock_name': db_scene.stock.name,
             'ticker': db_scene.stock.symbol,
             'start_date': db_scene.start_date.strftime('%Y-%m-%d'),
@@ -114,7 +112,7 @@ def create_scene(scene: schemas.SceneCreate, db: Session = Depends(get_db)):
         existing_scene = db.query(models.Scene).filter(
             models.Scene.start_date == scene.start_date,
             models.Scene.end_date == scene.end_date,
-            models.Scene.indicator_id == scene.indicator_id
+            models.Scene.stock_id == scene.stock_id
         ).first()
         return existing_scene
 
@@ -129,7 +127,7 @@ def delete_scene(scene_id: int, db: Session = Depends(get_db)):
 
 @app.get('/scenes/{scene_id}', response_model=schemas.Scene)
 def read_scene(scene_id: int, db: Session = Depends(get_db)):
-    db_scene = db.query(models.Scene).options(joinedload(models.Scene.indicator), joinedload(models.Scene.stock)).filter(models.Scene.id == scene_id).first()
+    db_scene = db.query(models.Scene).options(joinedload(models.Scene.stock)).filter(models.Scene.id == scene_id).first()
     if db_scene is None:
         raise HTTPException(status_code=404, detail="Scene not found")
     return db_scene
@@ -142,18 +140,33 @@ def read_scenes(skip: int = 0, limit: int = 10, db: Session = Depends(get_db)):
             logger.info(f"Backtest Result: {backtest.__dict__}")
     return scenes
 
-@app.post('/backtests/{scene_id}', response_model=List[schemas.BacktestResult])
-def perform_backtest(scene_id: int, db: Session = Depends(get_db)):
+@app.get('/best_indicator/{scene_id}', response_model=schemas.BacktestResult)
+def get_best_indicator(scene_id: int, db: Session = Depends(get_db)):
+    db_scene = db.query(models.Scene).options(joinedload(models.Scene.backtests).joinedload(models.BacktestResult.indicator)).filter(models.Scene.id == scene_id).first()
+    if db_scene is None:
+        raise HTTPException(status_code=404, detail="Scene not found")
+    
+    best_backtest = select_best_indicator([backtest.__dict__ for backtest in db_scene.backtests])
+    
+    if best_backtest is None:
+        raise HTTPException(status_code=404, detail="No backtests found for the scene")
+    
+    return best_backtest
+
+@app.post('/backtests/{scene_id}/{indicator_id}', response_model=List[schemas.BacktestResult])
+def perform_backtest(scene_id: int, indicator_id: int, db: Session = Depends(get_db)):
     db_scene = db.query(models.Scene).filter(models.Scene.id == scene_id).first()
     if db_scene is None:
         raise HTTPException(status_code=404, detail="Scene not found")
     
+    print("The Db Scene: ", db_scene.__dict__)
+    db_indicator = db.query(models.Indicator).filter(models.Indicator.id == indicator_id).first()
     config = {
         'initial_cash': 500,
         'start_date': db_scene.start_date.strftime('%Y-%m-%d'),
         'end_date': db_scene.end_date.strftime('%Y-%m-%d'),
         'ticker': db_scene.stock.symbol,
-        'indicator': db_scene.indicator.symbol
+        'indicator': db_indicator.symbol
     }
 
     logger.info(f"Config: {config}")
@@ -164,7 +177,7 @@ def perform_backtest(scene_id: int, db: Session = Depends(get_db)):
 
     # Save metrics to database
     backtest_results = []
-    db_backtest_result = models.BacktestResult(scene_id=scene_id, **metrics)
+    db_backtest_result = models.BacktestResult(scene_id=scene_id, **metrics, indicator_id=indicator_id)
     db.add(db_backtest_result)
     db.commit()
     db.refresh(db_backtest_result)
@@ -251,3 +264,29 @@ def consume_scene_parameters():
         except Exception as e:
             logger.error(f"Error in consumer loop: {e}")
             time.sleep(5)  # Sleep for a while before retrying
+
+def normalize(value, min_value, max_value):
+    return (value - min_value) / (max_value - min_value)
+
+def calculate_score(backtest):
+    # Normalize metrics (assuming higher return and Sharpe ratio are better, lower max drawdown is better)
+    normalized_return = normalize(backtest['percentage_return'], -1, 1)
+    # normalized_max_drawdown = normalize(-backtest['max_drawdown'], -1, 0)  # Negate since lower is better
+    normalized_sharpe_ratio = normalize(backtest['sharpe_ratio'], 0, 3)
+    
+    score = (normalized_return * 0.4)  + (normalized_sharpe_ratio * 0.3)
+    # Combine normalized metrics into a single score (weights can be adjusted)
+    # score = (normalized_return * 0.4) + (normalized_max_drawdown * 0.3) + (normalized_sharpe_ratio * 0.3)
+    return score
+
+def select_best_indicator(backtests):
+    best_backtest = None
+    best_score = float('-inf')
+
+    for backtest in backtests:
+        score = calculate_score(backtest)
+        if score > best_score:
+            best_score = score
+            best_backtest = backtest
+
+    return best_backtest
